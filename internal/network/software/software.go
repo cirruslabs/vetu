@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"git.sr.ht/~jamesponddotco/acopw-go"
+	"github.com/cirruslabs/nutmeg/internal/externalcommand/passt"
 	"github.com/cirruslabs/nutmeg/internal/randommac"
 	"github.com/cirruslabs/nutmeg/internal/tuntap"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 	"net"
 	"os"
-	"os/exec"
 	"time"
 )
 
@@ -109,9 +109,13 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 		return nil, fmt.Errorf("failed to create random MAC-address for passt")
 	}
 
-	passtCmd := exec.CommandContext(ctx, "passt", "--foreground",
-		"--address", vmIP.String(), "--netmask", network.GetNetworkMask().String(), "--gateway", gatewayIP.String(),
-		"--mac-addr", passtHardwareAddr.String(), "-4", "--mtu", "1500", "--fd", "3", "--fd-is-tap")
+	passtCmd, err := passt.Passt(ctx, "--foreground", "--address", vmIP.String(),
+		"--netmask", network.GetNetworkMask().String(), "--gateway", gatewayIP.String(),
+		"--mac-addr", passtHardwareAddr.String(), "-4", "--mtu", "1500",
+		"--fd", "3", "--fd-is-tap")
+	if err != nil {
+		return nil, err
+	}
 
 	passtCmd.Stderr = os.Stderr
 	passtCmd.Stdout = os.Stdout
