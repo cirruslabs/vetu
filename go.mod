@@ -9,6 +9,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/klauspost/oui v0.0.0-20150225163751-35b4deb627f8
 	github.com/otiai10/copy v1.12.0
+	github.com/projectcalico/libcalico-go v1.7.3
 	github.com/seancfoley/ipaddress-go v1.5.4
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
@@ -27,7 +28,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7 // indirect
-	github.com/projectcalico/libcalico-go v1.7.3 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/seancfoley/bintree v1.2.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
