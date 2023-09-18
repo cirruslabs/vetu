@@ -1,0 +1,12 @@
+#cloud-config
+users:
+  - name: nutmeg
+    plain_text_passwd: nutmeg
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: False
+    shell: /bin/bash
+
+chpasswd:
+  expire: False
+
+ssh_pwauth: True
