@@ -4,5 +4,6 @@
     "dockerfile": "Dockerfile"
   },
   "privileged": true,
+  "initializeCommand": "chmod a+rw /dev/kvm",
   "remoteUser": "vscode"
 }
