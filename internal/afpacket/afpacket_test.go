@@ -7,5 +7,5 @@ import (
 )
 
 func TestHtons(t *testing.T) {
-	require.Equal(t, 0x3412, htons(0x1234))
+	require.Equal(t, uint16(0x3412), htons(0x1234))
 }
