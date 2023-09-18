@@ -40,7 +40,7 @@ func runIP(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, neigh := range neighbors {
-		if bytes.Compare(neigh.HardwareAddr, vmDir.Config().MACAddress.HardwareAddr) == 0 {
+		if bytes.Equal(neigh.HardwareAddr, vmDir.Config().MACAddress.HardwareAddr) {
 			fmt.Println(neigh.IP.String())
 
 			return nil
