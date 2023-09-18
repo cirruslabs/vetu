@@ -12,7 +12,3 @@ RUN apt-get update && apt-get -y install cloud-hypervisor
 RUN git clone --branch tap-fd https://github.com/edigaryev/passt.git
 WORKDIR passt
 RUN make -j `nproc` && cp passt /usr/local/bin/
-
-# Generate cloud-init image
-WORKDIR tools/cloud-init
-RUN make
