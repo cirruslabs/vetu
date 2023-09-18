@@ -1,0 +1,6 @@
+{
+  "name": "nutmeg-ready environment (amd64)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  }
+}
