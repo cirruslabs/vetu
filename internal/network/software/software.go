@@ -3,7 +3,7 @@ package software
 import (
 	"context"
 	"fmt"
-	"git.sr.ht/~jamesponddotco/acopw-go"
+	"github.com/cirruslabs/nutmeg/internal/afpacket"
 	"github.com/cirruslabs/nutmeg/internal/externalcommand/passt"
 	"github.com/cirruslabs/nutmeg/internal/randommac"
 	"github.com/cirruslabs/nutmeg/internal/tuntap"
@@ -15,52 +15,17 @@ import (
 )
 
 type Network struct {
-	tapFile    *os.File
-	bridgeName string
+	tapFile *os.File
 }
 
 func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error) {
-	// Generate interface names that we'll use for this network instance
-	//
-	// Note that the maximum interface name is limited to 15 characters in Linux.
-	randomComponent, err := (&acopw.Random{
-		Length:     5,
-		UseLower:   true,
-		UseUpper:   false,
-		UseNumbers: true,
-		UseSymbols: false,
-	}).Generate()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate random component: %v", err)
-	}
-
-	bridgeInterfaceName := fmt.Sprintf("nutmeg-%s-br", randomComponent)
-	passtInterfaceName := fmt.Sprintf("nutmeg-%s-ps", randomComponent)
-	vmInterfafceName := fmt.Sprintf("nutmeg-%s-vm", randomComponent)
-
-	// Create a TAP interface for passt
-	_, passtTapFile, err := tuntap.CreateTAP(passtInterfaceName, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate a TAP interface for passt: %v", err)
-	}
-
-	passtLink, err := netlink.LinkByName(passtInterfaceName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find the TAP interface for passt that we've just "+
-			"created: %v", err)
-	}
-
-	if err := netlink.LinkSetUp(passtLink); err != nil {
-		return nil, fmt.Errorf("failed to bring the TAP interface for passt: %v", err)
-	}
-
 	// Create a TAP interface for Cloud Hypervisor
-	_, vmTapFile, err := tuntap.CreateTAP(vmInterfafceName, unix.IFF_VNET_HDR)
+	vmInterfaceName, vmTapFile, err := tuntap.CreateTAP("nutmeg%d", unix.IFF_VNET_HDR)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate a TAP interface for Cloud Hypervisor: %v", err)
 	}
 
-	vmLink, err := netlink.LinkByName(vmInterfafceName)
+	vmLink, err := netlink.LinkByName(vmInterfaceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find the TAP interface for Cloud Hypervisor that we've just "+
 			"created: %v", err)
@@ -70,21 +35,21 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 		return nil, fmt.Errorf("failed to bring the TAP interface for Cloud Hypervisor: %v", err)
 	}
 
-	// Create a bridge and add both of the TAP interfaces above to it
-	bridgeLink, err := createBridgeWithLinks(ctx, bridgeInterfaceName, vmLink, passtLink)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create bridge: %v", err)
-	}
-
 	// Find an available subnet to use
 	gatewayIP, vmIP, hostIP, network, err := FindAvailableSubnet(29)
 	if err != nil {
 		return nil, err
 	}
 
+	// Work around systemd-udevd(8) imposing its own random MAC-address on the interface[1]
+	// shortly after we create it, which results in the removal of our static neighbor.
+	//
+	// [1]: https://github.com/systemd/systemd/issues/21185
+	time.Sleep(100 * time.Millisecond)
+
 	// Add a permanent neighbor so that "nutmeg ip" would work
 	if err := netlink.NeighAdd(&netlink.Neigh{
-		LinkIndex:    bridgeLink.Attrs().Index,
+		LinkIndex:    vmLink.Attrs().Index,
 		IP:           vmIP,
 		HardwareAddr: vmHardwareAddr,
 		State:        netlink.NUD_PERMANENT,
@@ -94,13 +59,18 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 
 	// Add an address so that we would be able to connect
 	// to the VM by using an IP address returned by "nutmeg ip"
-	if err := netlink.AddrAdd(bridgeLink, &netlink.Addr{
+	if err := netlink.AddrAdd(vmLink, &netlink.Addr{
 		IPNet: &net.IPNet{
 			IP:   hostIP,
 			Mask: network.GetNetworkMask().Bytes(),
 		},
 	}); err != nil {
 		return nil, fmt.Errorf("failed to assign address to a bridge interface: %v", err)
+	}
+
+	rawSocketFile, err := afpacket.RawSocket(vmLink.Attrs().Index)
+	if err != nil {
+		return nil, err
 	}
 
 	// Launch passt
@@ -121,7 +91,7 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 	passtCmd.Stdout = os.Stdout
 
 	passtCmd.ExtraFiles = []*os.File{
-		passtTapFile,
+		rawSocketFile,
 	}
 
 	if err := passtCmd.Start(); err != nil {
@@ -129,61 +99,8 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 	}
 
 	return &Network{
-		tapFile:    vmTapFile,
-		bridgeName: bridgeInterfaceName,
+		tapFile: vmTapFile,
 	}, nil
-}
-
-func createBridgeWithLinks(ctx context.Context, name string, linksToAdd ...netlink.Link) (netlink.Link, error) {
-	// Create a bridge
-	linkAttrs := netlink.NewLinkAttrs()
-	linkAttrs.Name = name
-
-	bridgeLinkUncooked := &netlink.Bridge{
-		LinkAttrs: linkAttrs,
-	}
-
-	if err := netlink.LinkAdd(bridgeLinkUncooked); err != nil {
-		return nil, fmt.Errorf("could not add %s: %v", name, err)
-	}
-
-	bridgeLink, err := netlink.LinkByName(name)
-	if err != nil {
-		return nil, err
-	}
-
-	// Add interfaces
-	for _, linkToAdd := range linksToAdd {
-		if err := netlink.LinkSetMaster(linkToAdd, bridgeLink); err != nil {
-			return nil, err
-		}
-	}
-
-	// Bring the bridge up
-	if err := netlink.LinkSetUp(bridgeLink); err != nil {
-		return nil, err
-	}
-
-	// Wait for the bridge to become "up"
-	for {
-		bridgeLink, err = netlink.LinkByName(name)
-		if err != nil {
-			return nil, err
-		}
-
-		if (bridgeLink.Attrs().Flags & net.FlagUp) != 0 {
-			break
-		}
-
-		select {
-		case <-time.After(100 * time.Millisecond):
-			continue
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
-
-	return bridgeLink, nil
 }
 
 func (network *Network) Tap() *os.File {
@@ -191,11 +108,5 @@ func (network *Network) Tap() *os.File {
 }
 
 func (network *Network) Close() error {
-	// Remove bridge interface
-	linkAttrs := netlink.NewLinkAttrs()
-	linkAttrs.Name = network.bridgeName
-
-	return netlink.LinkDel(&netlink.Bridge{
-		LinkAttrs: linkAttrs,
-	})
+	return nil
 }

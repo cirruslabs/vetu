@@ -1,7 +1,3 @@
-git.sr.ht/~jamesponddotco/acopw-go v0.5.0 h1:tgIn35SBZxmIWcHVBOtXgMsXyT+DwUcgEqNoTkrr4pI=
-git.sr.ht/~jamesponddotco/acopw-go v0.5.0/go.mod h1:UVEx2sDvSQFa6p3ZH2ZBLhkGwn/dtVhFe6dqeydDuTU=
-git.sr.ht/~jamesponddotco/xstd-go v0.0.0-20230506171649-ea779401c9ea h1:vGbjLamrlV9Ie3n+qPXZlHy3gb1mKA51TYqO2z9LNWI=
-git.sr.ht/~jamesponddotco/xstd-go v0.0.0-20230506171649-ea779401c9ea/go.mod h1:0tqdK5/MZYSPxAiwtG4LlVfdQ+iaFoksU/FTIGQ/v/Y=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
