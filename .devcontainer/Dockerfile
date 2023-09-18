@@ -12,6 +12,3 @@ RUN apt-get update && apt-get -y install cloud-hypervisor
 RUN git clone --branch tap-fd https://github.com/edigaryev/passt.git
 WORKDIR passt
 RUN make -j `nproc` && cp passt /usr/local/bin/
-
-# Allow /dev/kvm access for everyone
-RUN chmod a+rw /dev/kvm
