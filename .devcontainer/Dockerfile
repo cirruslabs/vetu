@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/base:bookworm
+FROM mcr.microsoft.com/devcontainers/go:bookworm
 
 # Install QEMU utils and capabilities(7) utils
 RUN apt-get update && apt-get -y install qemu-utils libcap2-bin
