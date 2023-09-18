@@ -3,6 +3,11 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
+  },
   "privileged": true,
   "initializeCommand": "chmod a+rw /dev/kvm",
   "remoteUser": "vscode"
