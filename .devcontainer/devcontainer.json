@@ -9,7 +9,7 @@
     }
   },
   "privileged": true,
-  "capAdd": ["CAP_NET_RAW", "CAP_NET_ADMIN"],
+  "capAdd": ["NET_RAW", "NET_ADMIN"],
   "initializeCommand": "chmod a+rw /dev/kvm",
   "remoteUser": "vscode"
 }
