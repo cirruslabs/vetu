@@ -81,8 +81,7 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 
 	passtCmd, err := passt.Passt(ctx, "--foreground", "--address", vmIP.String(),
 		"--netmask", network.GetNetworkMask().String(), "--gateway", gatewayIP.String(),
-		"--mac-addr", passtHardwareAddr.String(), "-4", "--mtu", "1500",
-		"--fd", "3", "--fd-is-tap")
+		"--mac-addr", passtHardwareAddr.String(), "-4", "--mtu", "1500", "--tap-fd", "3")
 	if err != nil {
 		return nil, err
 	}
