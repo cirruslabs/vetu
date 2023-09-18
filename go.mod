@@ -3,7 +3,6 @@ module github.com/cirruslabs/nutmeg
 go 1.21.0
 
 require (
-	git.sr.ht/~jamesponddotco/acopw-go v0.5.0
 	github.com/google/uuid v1.3.0
 	github.com/gosuri/uitable v0.0.4
 	github.com/hashicorp/go-version v1.6.0
@@ -18,7 +17,6 @@ require (
 )
 
 require (
-	git.sr.ht/~jamesponddotco/xstd-go v0.0.0-20230506171649-ea779401c9ea // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
