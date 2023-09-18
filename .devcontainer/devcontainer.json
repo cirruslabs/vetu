@@ -3,5 +3,6 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "privileged": true,
   "remoteUser": "vscode"
 }
