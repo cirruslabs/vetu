@@ -1,3 +1,4 @@
+//nolint:predeclared // that's ok, we import it as deletepkg
 package delete
 
 import (
