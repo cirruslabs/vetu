@@ -1,0 +1,15 @@
+{
+  "name": "vetu-ready environment (amd64)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
+  },
+  "privileged": true,
+  "capAdd": ["NET_RAW", "NET_ADMIN"],
+  "initializeCommand": "chmod a+rw /dev/kvm",
+  "remoteUser": "vscode"
+}

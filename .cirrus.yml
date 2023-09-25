@@ -1,0 +1,7 @@
+container:
+  image: golang:latest
+
+task:
+  name: Test
+
+  script: go test -v ./...
