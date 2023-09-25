@@ -38,6 +38,7 @@ func RawSocket(ifIndex int) (*os.File, error) {
 	return os.NewFile(uintptr(rawSocketFD), "raw socket"), nil
 }
 
+// htons converts a value from host to network byte order.
 func htons(hostshort uint16) uint16 {
 	repr := make([]byte, 2)
 
