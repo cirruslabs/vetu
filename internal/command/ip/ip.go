@@ -3,8 +3,8 @@ package ip
 import (
 	"bytes"
 	"fmt"
-	"github.com/cirruslabs/nutmeg/internal/name/localname"
-	"github.com/cirruslabs/nutmeg/internal/storage/local"
+	"github.com/cirruslabs/vetu/internal/name/localname"
+	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
 )

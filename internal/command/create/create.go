@@ -2,11 +2,11 @@ package create
 
 import (
 	"fmt"
-	"github.com/cirruslabs/nutmeg/internal/name/localname"
-	"github.com/cirruslabs/nutmeg/internal/randommac"
-	"github.com/cirruslabs/nutmeg/internal/storage/local"
-	"github.com/cirruslabs/nutmeg/internal/storage/temporary"
-	"github.com/cirruslabs/nutmeg/internal/vmconfig"
+	"github.com/cirruslabs/vetu/internal/name/localname"
+	"github.com/cirruslabs/vetu/internal/randommac"
+	"github.com/cirruslabs/vetu/internal/storage/local"
+	"github.com/cirruslabs/vetu/internal/storage/temporary"
+	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/spf13/cobra"
 	"path/filepath"
 )

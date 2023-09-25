@@ -1,7 +1,7 @@
 package randommac_test
 
 import (
-	"github.com/cirruslabs/nutmeg/internal/randommac"
+	"github.com/cirruslabs/vetu/internal/randommac"
 	"github.com/klauspost/oui"
 	"github.com/stretchr/testify/require"
 	"testing"

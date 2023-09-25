@@ -3,7 +3,7 @@ package vmdirectory
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cirruslabs/nutmeg/internal/vmconfig"
+	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"os"
 	"path/filepath"
 	"runtime"

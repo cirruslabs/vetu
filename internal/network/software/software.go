@@ -3,10 +3,10 @@ package software
 import (
 	"context"
 	"fmt"
-	"github.com/cirruslabs/nutmeg/internal/afpacket"
-	"github.com/cirruslabs/nutmeg/internal/externalcommand/passt"
-	"github.com/cirruslabs/nutmeg/internal/randommac"
-	"github.com/cirruslabs/nutmeg/internal/tuntap"
+	"github.com/cirruslabs/vetu/internal/afpacket"
+	"github.com/cirruslabs/vetu/internal/externalcommand/passt"
+	"github.com/cirruslabs/vetu/internal/randommac"
+	"github.com/cirruslabs/vetu/internal/tuntap"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 	"net"
@@ -20,7 +20,7 @@ type Network struct {
 
 func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error) {
 	// Create a TAP interface for Cloud Hypervisor
-	vmInterfaceName, vmTapFile, err := tuntap.CreateTAP("nutmeg%d", unix.IFF_VNET_HDR)
+	vmInterfaceName, vmTapFile, err := tuntap.CreateTAP("vetu%d", unix.IFF_VNET_HDR)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate a TAP interface for Cloud Hypervisor: %v", err)
 	}
@@ -47,7 +47,7 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 	// [1]: https://github.com/systemd/systemd/issues/21185
 	time.Sleep(100 * time.Millisecond)
 
-	// Add a permanent neighbor so that "nutmeg ip" would work
+	// Add a permanent neighbor so that "vetu ip" would work
 	if err := netlink.NeighAdd(&netlink.Neigh{
 		LinkIndex:    vmLink.Attrs().Index,
 		IP:           vmIP,
@@ -58,7 +58,7 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 	}
 
 	// Add an address so that we would be able to connect
-	// to the VM by using an IP address returned by "nutmeg ip"
+	// to the VM by using an IP address returned by "vetu ip"
 	if err := netlink.AddrAdd(vmLink, &netlink.Addr{
 		IPNet: &net.IPNet{
 			IP:   hostIP,

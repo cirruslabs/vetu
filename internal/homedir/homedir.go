@@ -6,7 +6,7 @@ import (
 )
 
 func Path() (string, error) {
-	override, ok := os.LookupEnv("NUTMEG_HOME")
+	override, ok := os.LookupEnv("VETU_HOME")
 	if ok {
 		return override, nil
 	}
@@ -16,5 +16,5 @@ func Path() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(userHomeDir, ".nutmeg"), nil
+	return filepath.Join(userHomeDir, ".vetu"), nil
 }

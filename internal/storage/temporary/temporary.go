@@ -1,8 +1,8 @@
 package temporary
 
 import (
-	"github.com/cirruslabs/nutmeg/internal/homedir"
-	"github.com/cirruslabs/nutmeg/internal/vmdirectory"
+	"github.com/cirruslabs/vetu/internal/homedir"
+	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/google/uuid"
 	cp "github.com/otiai10/copy"
 	"os"
