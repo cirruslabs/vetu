@@ -1,5 +1,5 @@
 {
-  "name": "nutmeg-ready environment (amd64)",
+  "name": "vetu-ready environment (amd64)",
   "build": {
     "dockerfile": "Dockerfile"
   },

@@ -2,7 +2,7 @@ package list
 
 import (
 	"fmt"
-	"github.com/cirruslabs/nutmeg/internal/storage/local"
+	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 )

@@ -2,7 +2,7 @@ package bridged
 
 import (
 	"fmt"
-	"github.com/cirruslabs/nutmeg/internal/tuntap"
+	"github.com/cirruslabs/vetu/internal/tuntap"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 	"os"
@@ -20,7 +20,7 @@ func New(bridgeName string) (*Network, error) {
 	}
 
 	// Create a TAP interface
-	tapName, tapFile, err := tuntap.CreateTAP("nutmeg%d", unix.IFF_VNET_HDR)
+	tapName, tapFile, err := tuntap.CreateTAP("vetu%d", unix.IFF_VNET_HDR)
 	if err != nil {
 		return nil, err
 	}

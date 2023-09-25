@@ -2,12 +2,12 @@ package run
 
 import (
 	"fmt"
-	"github.com/cirruslabs/nutmeg/internal/externalcommand/cloudhypervisor"
-	"github.com/cirruslabs/nutmeg/internal/name/localname"
-	"github.com/cirruslabs/nutmeg/internal/network"
-	"github.com/cirruslabs/nutmeg/internal/network/bridged"
-	"github.com/cirruslabs/nutmeg/internal/network/software"
-	"github.com/cirruslabs/nutmeg/internal/storage/local"
+	"github.com/cirruslabs/vetu/internal/externalcommand/cloudhypervisor"
+	"github.com/cirruslabs/vetu/internal/name/localname"
+	"github.com/cirruslabs/vetu/internal/network"
+	"github.com/cirruslabs/vetu/internal/network/bridged"
+	"github.com/cirruslabs/vetu/internal/network/software"
+	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"

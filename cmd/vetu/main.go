@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/cirruslabs/nutmeg/internal/command"
+	"github.com/cirruslabs/vetu/internal/command"
 	"log"
 	"os"
 	"os/signal"

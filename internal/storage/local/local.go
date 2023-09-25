@@ -2,9 +2,9 @@ package local
 
 import (
 	"fmt"
-	"github.com/cirruslabs/nutmeg/internal/homedir"
-	"github.com/cirruslabs/nutmeg/internal/name/localname"
-	"github.com/cirruslabs/nutmeg/internal/vmdirectory"
+	"github.com/cirruslabs/vetu/internal/homedir"
+	"github.com/cirruslabs/vetu/internal/name/localname"
+	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"os"
 	"path/filepath"
 )

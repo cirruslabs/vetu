@@ -1,4 +1,4 @@
-module github.com/cirruslabs/nutmeg
+module github.com/cirruslabs/vetu
 
 go 1.21.0
 
