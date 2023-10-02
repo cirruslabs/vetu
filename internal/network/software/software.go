@@ -2,10 +2,11 @@ package software
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/afpacket"
-	"github.com/cirruslabs/vetu/internal/externalcommand/passt"
-	"github.com/cirruslabs/vetu/internal/randommac"
+	"github.com/cirruslabs/vetu/internal/network/software/dhcp"
+	"github.com/cirruslabs/vetu/internal/network/software/gvisor"
 	"github.com/cirruslabs/vetu/internal/tuntap"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -14,25 +15,30 @@ import (
 	"time"
 )
 
+var ErrInitFailed = errors.New("failed to initialize software networking")
+
 type Network struct {
 	tapFile *os.File
+	ctx     context.Context
+	cancel  context.CancelFunc
 }
 
-func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error) {
+func New(vmHardwareAddr net.HardwareAddr) (*Network, error) {
 	// Create a TAP interface for Cloud Hypervisor
 	vmInterfaceName, vmTapFile, err := tuntap.CreateTAP("vetu%d", unix.IFF_VNET_HDR)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate a TAP interface for Cloud Hypervisor: %v", err)
+		return nil, fmt.Errorf("%w: failed to create a TAP interface: %v", ErrInitFailed, err)
 	}
 
 	vmLink, err := netlink.LinkByName(vmInterfaceName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find the TAP interface for Cloud Hypervisor that we've just "+
-			"created: %v", err)
+		return nil, fmt.Errorf("%w: failed to find the TAP interface %q that we've just created: %v",
+			ErrInitFailed, vmInterfaceName, err)
 	}
 
 	if err := netlink.LinkSetUp(vmLink); err != nil {
-		return nil, fmt.Errorf("failed to bring the TAP interface for Cloud Hypervisor: %v", err)
+		return nil, fmt.Errorf("%w: failed to bring the TAP interface %q up: %v",
+			ErrInitFailed, vmInterfaceName, err)
 	}
 
 	// Find an available subnet to use
@@ -54,7 +60,8 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 		HardwareAddr: vmHardwareAddr,
 		State:        netlink.NUD_PERMANENT,
 	}); err != nil {
-		return nil, fmt.Errorf("failed to add a permanent neighbor: %v", err)
+		return nil, fmt.Errorf("%w: failed to add a permanent neighbor %s -> %s on an interface %s: %v",
+			ErrInitFailed, vmIP, vmHardwareAddr, vmLink.Attrs().Name, err)
 	}
 
 	// Add an address so that we would be able to connect
@@ -65,41 +72,49 @@ func New(ctx context.Context, vmHardwareAddr net.HardwareAddr) (*Network, error)
 			Mask: network.GetNetworkMask().Bytes(),
 		},
 	}); err != nil {
-		return nil, fmt.Errorf("failed to assign address to a bridge interface: %v", err)
+		return nil, fmt.Errorf("%w: failed to assign address %s to an interface %q: %v",
+			ErrInitFailed, hostIP, vmLink.Attrs().Name, err)
 	}
 
-	rawSocketFile, err := afpacket.RawSocket(vmLink.Attrs().Index)
+	rawSocketFD, err := afpacket.RawSocket(vmLink.Attrs().Index)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: failed to create a raw socket for the interface %q: %v",
+			ErrInitFailed, vmLink.Attrs().Name, err)
 	}
 
-	// Launch passt
-	passtHardwareAddr, err := randommac.UnicastAndLocallyAdministered()
+	gvisor, err := gvisor.New(rawSocketFD, gatewayIP)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create random MAC-address for passt")
+		return nil, fmt.Errorf("%w: %v", ErrInitFailed, err)
 	}
 
-	passtCmd, err := passt.Passt(ctx, "--foreground", "--address", vmIP.String(),
-		"--netmask", network.GetNetworkMask().String(), "--gateway", gatewayIP.String(),
-		"--mac-addr", passtHardwareAddr.String(), "-4", "--mtu", "1500", "--tap-fd", "3")
+	dhcp, err := dhcp.New(gvisor.Stack(), gatewayIP, vmIP)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrInitFailed, err)
 	}
 
-	passtCmd.Stderr = os.Stderr
-	passtCmd.Stdout = os.Stdout
+	ctx, cancel := context.WithCancel(context.Background())
 
-	passtCmd.ExtraFiles = []*os.File{
-		rawSocketFile,
-	}
+	go func() {
+		if err := gvisor.Run(ctx); err != nil {
+			panic(err)
+		}
+	}()
 
-	if err := passtCmd.Start(); err != nil {
-		return nil, fmt.Errorf("failed to run passt: %v", err)
-	}
+	go func() {
+		if err := dhcp.Run(context.Background()); err != nil {
+			panic(err)
+		}
+	}()
 
 	return &Network{
 		tapFile: vmTapFile,
+		ctx:     ctx,
+		cancel:  cancel,
 	}, nil
+}
+
+func (network *Network) SupportsOffload() bool {
+	return false
 }
 
 func (network *Network) Tap() *os.File {
@@ -107,5 +122,7 @@ func (network *Network) Tap() *os.File {
 }
 
 func (network *Network) Close() error {
+	network.cancel()
+
 	return nil
 }
