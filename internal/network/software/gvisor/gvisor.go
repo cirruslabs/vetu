@@ -193,6 +193,8 @@ func (gvisor *GVisor) forwardUDP(request *udp.ForwarderRequest) {
 }
 
 func transferWithTimeout(dst net.Conn, src net.Conn, timeout time.Duration) {
+	defer src.Close()
+
 	buf := make([]byte, 1500)
 
 	for {
