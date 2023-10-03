@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var netBridged string
@@ -52,7 +53,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	case netBridged != "":
 		network, err = bridged.New(netBridged)
 	default:
-		network, err = software.New(cmd.Context(), vmConfig.MACAddress.HardwareAddr)
+		network, err = software.New(vmConfig.MACAddress.HardwareAddr)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to initialize VM's network: %v", err)
@@ -60,7 +61,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	defer network.Close()
 
 	// Kernel
-	hvArgs := []string{"--kernel", vmDir.KernelPath()}
+	hvArgs := []string{"--console", "pty", "--serial", "tty", "--kernel", vmDir.KernelPath()}
 
 	// Initramfs
 	_, err = os.Stat(vmDir.InitramfsPath())
@@ -88,8 +89,14 @@ func runRun(cmd *cobra.Command, args []string) error {
 		hvArgs = append(hvArgs, "--memory", fmt.Sprintf("size=%d", memorySize))
 	}
 
-	// Attach network's TAP interface
-	hvArgs = append(hvArgs, "--net", fmt.Sprintf("fd=3,mac=%s", vmConfig.MACAddress))
+	// Networking
+	netOpts := []string{"fd=3", fmt.Sprintf("mac=%s", vmConfig.MACAddress)}
+
+	if !network.SupportsOffload() {
+		netOpts = append(netOpts, "offload_tso=off", "offload_ufo=off", "offload_csum=off")
+	}
+
+	hvArgs = append(hvArgs, "--net", strings.Join(netOpts, ","))
 
 	hv, err := cloudhypervisor.CloudHypervisor(cmd.Context(), hvArgs...)
 	if err != nil {

@@ -42,6 +42,10 @@ func New(bridgeName string) (*Network, error) {
 	}, nil
 }
 
+func (network *Network) SupportsOffload() bool {
+	return true
+}
+
 func (network *Network) Tap() *os.File {
 	return network.tapFile
 }
