@@ -16,6 +16,7 @@ require (
 	github.com/vishvananda/netlink v1.1.1-0.20211118161826-650dca95af54
 	golang.org/x/sys v0.12.0
 	gvisor.dev/gvisor v0.0.0-20230926030033-4af66e670562
+	inet.af/tcpproxy v0.0.0-20221017015627-91f861402626
 )
 
 require (

@@ -16,8 +16,9 @@ import (
 	"gvisor.dev/gvisor/pkg/tcpip/transport/tcp"
 	"gvisor.dev/gvisor/pkg/tcpip/transport/udp"
 	"gvisor.dev/gvisor/pkg/waiter"
-	"io"
+	"inet.af/tcpproxy"
 	"net"
+	"time"
 )
 
 const nicID = 1
@@ -153,13 +154,13 @@ func (gvisor *GVisor) forwardTCP(request *tcp.ForwarderRequest) {
 
 	request.Complete(false)
 
-	go func() {
-		go func() {
-			_, _ = io.Copy(remoteConn, guestConn)
-		}()
+	tcpProxy := &tcpproxy.DialProxy{
+		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			return remoteConn, nil
+		},
+	}
 
-		_, _ = io.Copy(guestConn, remoteConn)
-	}()
+	go tcpProxy.HandleConn(guestConn)
 }
 
 func (gvisor *GVisor) forwardUDP(request *udp.ForwarderRequest) {
@@ -181,12 +182,30 @@ func (gvisor *GVisor) forwardUDP(request *udp.ForwarderRequest) {
 	}
 
 	go func() {
+		const udpTimeout = 30 * time.Second
+
 		go func() {
-			_, _ = io.Copy(remoteConn, guestConn)
+			transferWithTimeout(remoteConn, guestConn, udpTimeout)
 		}()
 
-		_, _ = io.Copy(guestConn, remoteConn)
+		transferWithTimeout(guestConn, remoteConn, udpTimeout)
 	}()
+}
+
+func transferWithTimeout(dst net.Conn, src net.Conn, timeout time.Duration) {
+	buf := make([]byte, 1500)
+
+	for {
+		_ = src.SetReadDeadline(time.Now().Add(timeout))
+
+		n, err := src.Read(buf)
+		if err != nil {
+			return
+		}
+
+		_, _ = dst.Write(buf[:n])
+		_ = dst.SetReadDeadline(time.Now().Add(timeout))
+	}
 }
 
 func withForwardingFilter(h gVisorHandler) gVisorHandler {
