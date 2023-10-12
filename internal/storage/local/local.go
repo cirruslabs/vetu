@@ -5,44 +5,41 @@ import (
 	"github.com/cirruslabs/vetu/internal/homedir"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
+	"github.com/samber/lo"
 	"os"
 	"path/filepath"
 )
 
 func Exists(name localname.LocalName) bool {
-	baseDir, err := initialize()
+	path, err := PathFor(name)
 	if err != nil {
 		return false
 	}
 
-	_, err = os.Stat(filepath.Join(baseDir, name.String()))
+	_, err = os.Stat(path)
 
 	return err == nil
 }
 
 func MoveIn(name localname.LocalName, vmDir *vmdirectory.VMDirectory) error {
-	baseDir, err := initialize()
+	path, err := PathFor(name)
 	if err != nil {
 		return err
 	}
 
-	if err := os.Rename(vmDir.Path(), filepath.Join(baseDir, string(name))); err != nil {
-		return err
-	}
-
-	return nil
+	return os.Rename(vmDir.Path(), path)
 }
 
 func Open(name localname.LocalName) (*vmdirectory.VMDirectory, error) {
-	baseDir, err := initialize()
+	path, err := PathFor(name)
 	if err != nil {
 		return nil, err
 	}
 
-	return vmdirectory.Load(filepath.Join(baseDir, string(name)))
+	return vmdirectory.Load(path)
 }
 
-func List() ([]*vmdirectory.VMDirectory, error) {
+func List() ([]lo.Tuple2[string, *vmdirectory.VMDirectory], error) {
 	baseDir, err := initialize()
 	if err != nil {
 		return nil, err
@@ -53,7 +50,7 @@ func List() ([]*vmdirectory.VMDirectory, error) {
 		return nil, err
 	}
 
-	var result []*vmdirectory.VMDirectory
+	var result []lo.Tuple2[string, *vmdirectory.VMDirectory]
 
 	for _, dirEntry := range dirEntries {
 		if !dirEntry.IsDir() {
@@ -70,26 +67,24 @@ func List() ([]*vmdirectory.VMDirectory, error) {
 			return nil, err
 		}
 
-		result = append(result, vmDir)
+		result = append(result, lo.T2(dirEntry.Name(), vmDir))
 	}
 
 	return result, nil
 }
 
 func Delete(name localname.LocalName) error {
-	baseDir, err := initialize()
+	path, err := PathFor(name)
 	if err != nil {
 		return err
 	}
 
-	vmDir := filepath.Join(baseDir, name.String())
-
-	_, err = os.Stat(vmDir)
+	_, err = os.Stat(path)
 	if os.IsNotExist(err) {
 		return fmt.Errorf("cannot remove VM %s as it doesn't exist", name.String())
 	}
 
-	return os.RemoveAll(vmDir)
+	return os.RemoveAll(path)
 }
 
 func PathFor(name localname.LocalName) (string, error) {

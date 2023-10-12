@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -48,6 +49,29 @@ func Load(path string) (*VMDirectory, error) {
 
 func (vmDir *VMDirectory) Path() string {
 	return vmDir.baseDir
+}
+
+func (vmDir *VMDirectory) Size() (uint64, error) {
+	var result uint64
+
+	if err := filepath.WalkDir(vmDir.Path(), func(path string, dirEntry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		fileInfo, err := dirEntry.Info()
+		if err != nil {
+			return err
+		}
+
+		result += uint64(fileInfo.Size())
+
+		return nil
+	}); err != nil {
+		return 0, err
+	}
+
+	return result, nil
 }
 
 func (vmDir *VMDirectory) ConfigPath() string {
