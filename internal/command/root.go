@@ -6,6 +6,10 @@ import (
 	deletepkg "github.com/cirruslabs/vetu/internal/command/delete"
 	"github.com/cirruslabs/vetu/internal/command/ip"
 	"github.com/cirruslabs/vetu/internal/command/list"
+	"github.com/cirruslabs/vetu/internal/command/login"
+	"github.com/cirruslabs/vetu/internal/command/logout"
+	"github.com/cirruslabs/vetu/internal/command/pull"
+	"github.com/cirruslabs/vetu/internal/command/push"
 	"github.com/cirruslabs/vetu/internal/command/run"
 	"github.com/cirruslabs/vetu/internal/version"
 	"github.com/spf13/cobra"
@@ -24,7 +28,11 @@ func NewRootCmd() *cobra.Command {
 		clone.NewCommand(),
 		run.NewCommand(),
 		list.NewCommand(),
+		login.NewCommand(),
+		logout.NewCommand(),
 		ip.NewCommand(),
+		pull.NewCommand(),
+		push.NewCommand(),
 		deletepkg.NewCommand(),
 	)
 

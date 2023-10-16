@@ -1,3 +1,5 @@
+//go:build linux
+
 //nolint:testpackage // we need to test htons(), which is private
 package afpacket
 
