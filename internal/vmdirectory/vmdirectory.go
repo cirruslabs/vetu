@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 )
 
 type VMDirectory struct {
@@ -20,10 +19,7 @@ func Initialize(path string) (*VMDirectory, error) {
 		baseDir: path,
 	}
 
-	if err := vmDir.SetConfig(&vmconfig.VMConfig{
-		Version: 1,
-		Arch:    runtime.GOARCH,
-	}); err != nil {
+	if err := vmDir.SetConfig(vmconfig.New()); err != nil {
 		return nil, err
 	}
 

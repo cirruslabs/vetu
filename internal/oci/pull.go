@@ -2,7 +2,6 @@ package oci
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
@@ -68,13 +67,12 @@ func PullVMDirectory(
 		return "", err
 	}
 
-	var vmConfig vmconfig.VMConfig
-
-	if err := json.Unmarshal(vmConfigBytes, &vmConfig); err != nil {
+	vmConfig, err := vmconfig.NewFromJSON(vmConfigBytes)
+	if err != nil {
 		return "", err
 	}
 
-	if err := vmDir.SetConfig(&vmConfig); err != nil {
+	if err := vmDir.SetConfig(vmConfig); err != nil {
 		return "", err
 	}
 
