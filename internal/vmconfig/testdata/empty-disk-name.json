@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "arch": "amd64",
+  "disks": [
+    {
+      "name": ""
+    }
+  ]
+}

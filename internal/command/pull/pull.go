@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"fmt"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
 	"github.com/cirruslabs/vetu/internal/oci"
 	"github.com/cirruslabs/vetu/internal/storage/remote"
@@ -50,13 +51,44 @@ func runPull(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Pull the VM image
-	digest, err := oci.PullVMDirectory(cmd.Context(), client, reference, vmDir, int(concurrency))
+	// Resolve the reference to a manifest
+	fmt.Printf("pulling %s...\n", reference.CommonName())
+
+	fmt.Println("pulling manifest...")
+
+	manifest, err := client.ManifestGet(cmd.Context(), reference)
 	if err != nil {
 		return err
 	}
 
-	// We've successfully pulled the VM image, we can now atomically move
-	// the temporary directory containing it to its final destination
-	return remote.MoveIn(remoteName, digest, vmDir)
+	// Make the remote name that we've got from the user fully qualified
+	// by stripping the tag and setting its digest to the manifest's digest
+	fullyQualifiedRemoteName := remoteName
+	fullyQualifiedRemoteName.Tag = ""
+	fullyQualifiedRemoteName.Digest = manifest.GetDescriptor().Digest
+
+	// Pull the VM image if we don't have one already in cache
+	if remote.Exists(fullyQualifiedRemoteName) {
+		if err := oci.PullVMDirectory(cmd.Context(), client, reference, manifest, vmDir, int(concurrency)); err != nil {
+			return err
+		}
+
+		// We've successfully pulled the VM image, we can now atomically move
+		// the temporary directory containing it to its final destination
+		return remote.MoveIn(remoteName, manifest.GetDescriptor().Digest, vmDir)
+	} else {
+		fmt.Printf("skipping pull because %s already exists in the OCI cache...\n",
+			fullyQualifiedRemoteName)
+	}
+
+	// Link the remote names if tag is used and no linkage already exists in the storage
+	if remoteName.Tag != "" && !remote.Exists(remoteName) {
+		fmt.Printf("creating a link from %s to %s...\n", remoteName, fullyQualifiedRemoteName)
+
+		if err := remote.Link(fullyQualifiedRemoteName, remoteName); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

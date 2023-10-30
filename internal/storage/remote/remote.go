@@ -14,7 +14,7 @@ import (
 )
 
 func Exists(name remotename.RemoteName) bool {
-	path, err := PathFor(name)
+	path, err := PathForResolved(name)
 	if err != nil {
 		return false
 	}
@@ -22,6 +22,20 @@ func Exists(name remotename.RemoteName) bool {
 	_, err = os.Stat(path)
 
 	return err == nil
+}
+
+func Link(digestedRemoteName remotename.RemoteName, taggedRemoteName remotename.RemoteName) error {
+	oldname, err := PathForUnresolved(digestedRemoteName)
+	if err != nil {
+		return err
+	}
+
+	newname, err := PathForUnresolved(taggedRemoteName)
+	if err != nil {
+		return err
+	}
+
+	return os.Symlink(oldname, newname)
 }
 
 func MoveIn(name remotename.RemoteName, digest digest.Digest, vmDir *vmdirectory.VMDirectory) error {
@@ -53,7 +67,7 @@ func MoveIn(name remotename.RemoteName, digest digest.Digest, vmDir *vmdirectory
 }
 
 func Open(name remotename.RemoteName) (*vmdirectory.VMDirectory, error) {
-	path, err := PathFor(name)
+	path, err := PathForResolved(name)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +123,7 @@ func List() ([]lo.Tuple2[string, *vmdirectory.VMDirectory], error) {
 }
 
 func Delete(name remotename.RemoteName) error {
-	path, err := PathFor(name)
+	path, err := PathForResolved(name)
 	if err != nil {
 		return err
 	}
@@ -135,7 +149,22 @@ func Delete(name remotename.RemoteName) error {
 	return method(target)
 }
 
-func PathFor(name remotename.RemoteName) (string, error) {
+func PathForResolved(name remotename.RemoteName) (string, error) {
+	path, err := PathForUnresolved(name)
+	if err != nil {
+		return "", err
+	}
+
+	// Path can be a symlink when using tags, so resolve it
+	path, err = os.Readlink(path)
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
+
+func PathForUnresolved(name remotename.RemoteName) (string, error) {
 	baseDir, err := initialize()
 	if err != nil {
 		return "", err
@@ -151,15 +180,7 @@ func PathFor(name remotename.RemoteName) (string, error) {
 		components = append(components, name.Digest.String())
 	}
 
-	path := filepath.Join(components...)
-
-	// Path can be a symlink when using tags, so resolve it
-	path, err = os.Readlink(path)
-	if err != nil {
-		return "", err
-	}
-
-	return path, nil
+	return filepath.Join(components...), nil
 }
 
 func initialize() (string, error) {
