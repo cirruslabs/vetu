@@ -6,9 +6,9 @@ import (
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/dustin/go-humanize"
-	"github.com/opencontainers/go-digest"
 	"github.com/pierrec/lz4/v4"
 	"github.com/regclient/regclient"
+	"github.com/regclient/regclient/regclient/manifest"
 	"github.com/regclient/regclient/types"
 	manifestpkg "github.com/regclient/regclient/types/manifest"
 	"github.com/regclient/regclient/types/ref"
@@ -32,22 +32,13 @@ func PullVMDirectory(
 	ctx context.Context,
 	client *regclient.RegClient,
 	reference ref.Ref,
+	manifest manifest.Manifest,
 	vmDir *vmdirectory.VMDirectory,
 	concurrency int,
-) (digest.Digest, error) {
-	fmt.Printf("pulling %s...\n", reference.CommonName())
-
-	// Pull OCI image manifest
-	fmt.Println("pulling manifest...")
-
-	manifest, err := client.ManifestGet(ctx, reference)
-	if err != nil {
-		return "", err
-	}
-
+) error {
 	layers, err := manifest.(manifestpkg.Imager).GetLayers()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Find VM's config
@@ -55,7 +46,7 @@ func PullVMDirectory(
 		return descriptor.MediaType == MediaTypeVetuConfig
 	})
 	if len(vmConfigs) != 1 {
-		return "", fmt.Errorf("manifest should contain exactly one layer of type %s, found %d",
+		return fmt.Errorf("manifest should contain exactly one layer of type %s, found %d",
 			MediaTypeVetuConfig, len(vmConfigs))
 	}
 
@@ -64,16 +55,16 @@ func PullVMDirectory(
 
 	vmConfigBytes, err := pullBlob(ctx, client, reference, vmConfigs[0])
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	vmConfig, err := vmconfig.NewFromJSON(vmConfigBytes)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if err := vmDir.SetConfig(vmConfig); err != nil {
-		return "", err
+		return err
 	}
 
 	// Find VM's kernel
@@ -81,7 +72,7 @@ func PullVMDirectory(
 		return descriptor.MediaType == MediaTypeVetuKernel
 	})
 	if len(vmKernels) != 1 {
-		return "", fmt.Errorf("manifest should contain exactly one layer of type %s, found %d",
+		return fmt.Errorf("manifest should contain exactly one layer of type %s, found %d",
 			MediaTypeVetuKernel, len(vmKernels))
 	}
 
@@ -90,11 +81,11 @@ func PullVMDirectory(
 
 	vmKernelBytes, err := pullBlob(ctx, client, reference, vmKernels[0])
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if err := os.WriteFile(vmDir.KernelPath(), vmKernelBytes, 0600); err != nil {
-		return "", err
+		return err
 	}
 
 	// Find VM's initramfs
@@ -103,7 +94,7 @@ func PullVMDirectory(
 	})
 	if len(vmInitramfses) > 0 {
 		if len(vmInitramfses) > 1 {
-			return "", fmt.Errorf("manifest should contain exactly one layer of type %s, found %d",
+			return fmt.Errorf("manifest should contain exactly one layer of type %s, found %d",
 				MediaTypeVetuInitramfs, len(vmInitramfses))
 		}
 
@@ -111,11 +102,11 @@ func PullVMDirectory(
 
 		vmInitramfsBytes, err := pullBlob(ctx, client, reference, vmInitramfses[0])
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		if err := os.WriteFile(vmDir.InitramfsPath(), vmInitramfsBytes, 0600); err != nil {
-			return "", err
+			return err
 		}
 	}
 
@@ -133,26 +124,26 @@ func PullVMDirectory(
 		// Extract name
 		diskName, ok := disk.Annotations[AnnotationName]
 		if !ok {
-			return "", fmt.Errorf("disk layer has no %s annotation", AnnotationName)
+			return fmt.Errorf("disk layer has no %s annotation", AnnotationName)
 		}
 
 		// Name should be contained in the VM's config
 		if !lo.ContainsBy(vmConfig.Disks, func(disk vmconfig.Disk) bool {
 			return disk.Name == diskName
 		}) {
-			return "", fmt.Errorf("disk with name %q is not found in the VM's config", diskName)
+			return fmt.Errorf("disk with name %q is not found in the VM's config", diskName)
 		}
 
 		// Extract uncompressed size
 		uncompressedSizeRaw, ok := disk.Annotations[AnnotationUncompressedSize]
 		if !ok {
-			return "", fmt.Errorf("disk layer has no %s annotation", AnnotationUncompressedSize)
+			return fmt.Errorf("disk layer has no %s annotation", AnnotationUncompressedSize)
 		}
 
 		// Parse uncompressed size
 		uncompressedSize, err := strconv.ParseInt(uncompressedSizeRaw, 10, 64)
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		diskTaskCh <- &diskTask{
@@ -171,15 +162,15 @@ func PullVMDirectory(
 	for diskName, offset := range diskNameToOffset {
 		diskFile, err := os.OpenFile(filepath.Join(vmDir.Path(), diskName), os.O_WRONLY|os.O_CREATE, 0600)
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		if err := diskFile.Truncate(offset); err != nil {
-			return "", err
+			return err
 		}
 
 		if err := diskFile.Close(); err != nil {
-			return "", err
+			return err
 		}
 	}
 
@@ -226,18 +217,18 @@ func PullVMDirectory(
 	// Since we've finished with pulling disks,
 	// we can finish the associated progress bar
 	if err := progressBar.Finish(); err != nil {
-		return "", err
+		return err
 	}
 
 	// Check for errors
 	select {
 	case err := <-diskTasksErrCh:
-		return "", err
+		return err
 	default:
 		// no error reported
 	}
 
-	return manifest.GetDescriptor().Digest, nil
+	return nil
 }
 
 func pullBlob(
