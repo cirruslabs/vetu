@@ -17,7 +17,7 @@ task:
     - apt-get update
     - apt-get -y install goreleaser-pro
   release_script: goreleaser build --snapshot
-  binaries_artifacts:
+  goreleaser_dist_artifacts:
     path: "dist/**"
 
 task:
