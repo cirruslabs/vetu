@@ -90,5 +90,18 @@ func runPull(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// If the digest was used when pulling this VM image, mark it as
+	// explicitly pulled to prevent the automatic garbage collection
+	if remoteName.Digest != "" {
+		vmDir, err := remote.Open(remoteName)
+		if err != nil {
+			return err
+		}
+
+		if err := vmDir.SetExplicitlyPulled(true); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
