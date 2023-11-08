@@ -123,10 +123,13 @@ func List() ([]lo.Tuple2[string, *vmdirectory.VMDirectory], error) {
 }
 
 func Delete(name remotename.RemoteName) error {
-	path, err := PathForResolved(name)
+	path, err := PathForUnresolved(name)
 	if err != nil {
 		return err
 	}
+
+	// Figure out the base directory for this remote name
+	path = filepath.Dir(path)
 
 	var target string
 	var method func(path string) error
@@ -146,7 +149,11 @@ func Delete(name remotename.RemoteName) error {
 		return fmt.Errorf("VM doesn't exist")
 	}
 
-	return method(target)
+	if err := method(target); err != nil {
+		return err
+	}
+
+	return gc()
 }
 
 func PathForResolved(name remotename.RemoteName) (string, error) {
@@ -156,7 +163,7 @@ func PathForResolved(name remotename.RemoteName) (string, error) {
 	}
 
 	// Path can be a symlink when using tags, so resolve it
-	path, err = os.Readlink(path)
+	path, err = filepath.EvalSymlinks(path)
 	if err != nil {
 		return "", err
 	}
@@ -197,4 +204,78 @@ func initialize() (string, error) {
 	}
 
 	return baseDir, nil
+}
+
+//nolint:gocognit // doesn't look complex yet
+func gc() error {
+	baseDir, err := initialize()
+	if err != nil {
+		return err
+	}
+
+	// Collect digest-based paths that are managed by us
+	// (i.e. they are in ~/.vetu/cache/OCIs)
+	managedPaths := map[string]struct{}{}
+
+	// Collect paths to which the tag-based symbolic links point to
+	anyPathToNumReferences := map[string]int{}
+
+	if err := filepath.WalkDir(baseDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.Type() == os.ModeSymlink {
+			// De-reference the symbolic link
+			linkTarget, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+
+			// Perform garbage collection for tag-based images
+			// with broken outgoing references
+			_, err = os.Lstat(linkTarget)
+			if err != nil {
+				if os.IsNotExist(err) {
+					if err := os.Remove(path); err != nil {
+						return err
+					}
+				} else {
+					return err
+				}
+			}
+
+			// Count the outgoing reference if it's not broken
+			anyPathToNumReferences[linkTarget] += 1
+		} else if _, err := digest.Parse(d.Name()); err == nil {
+			managedPaths[path] = struct{}{}
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for managedPath := range managedPaths {
+		// Only garbage-collect paths that have no incoming references
+		if anyPathToNumReferences[managedPath] != 0 {
+			continue
+		}
+
+		// Only garbage-collect paths that were not pulled explicitly
+		vmDir, err := vmdirectory.Load(managedPath)
+		fmt.Println(vmDir, err)
+		if vmDir != nil {
+			fmt.Println(vmDir.ExplicitlyPulled())
+		}
+		if err == nil && vmDir.ExplicitlyPulled() {
+			continue
+		}
+
+		if err := os.RemoveAll(managedPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
