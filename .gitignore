@@ -3,3 +3,6 @@
 
 # cloud-init image
 /tools/cloud-init/cloud-init.iso
+
+# GoReleaser
+/dist
