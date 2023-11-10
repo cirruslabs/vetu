@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -45,6 +46,12 @@ func runRun(cmd *cobra.Command, args []string) error {
 	}
 
 	vmConfig := vmDir.Config()
+
+	// Validate VM's architecture
+	if vmConfig.Arch != runtime.GOARCH {
+		return fmt.Errorf("this VM is built to run on %q, but you're running %q",
+			vmConfig.Arch, runtime.GOARCH)
+	}
 
 	// Initialize network
 	var network network.Network
