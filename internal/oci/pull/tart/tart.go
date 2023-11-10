@@ -6,6 +6,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/oci/annotations"
 	"github.com/cirruslabs/vetu/internal/oci/diskpuller"
 	"github.com/cirruslabs/vetu/internal/oci/mediatypes"
+	"github.com/cirruslabs/vetu/internal/oci/pull/pullhelper"
 	"github.com/cirruslabs/vetu/internal/oci/pull/tart/applestream"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
@@ -45,7 +46,7 @@ func PullVMDirectory(
 	// Process VM's config
 	fmt.Println("pulling config...")
 
-	vmConfigBytes, err := pullBlob(ctx, client, reference, vmConfigs[0])
+	vmConfigBytes, err := pullhelper.PullBlob(ctx, client, reference, vmConfigs[0])
 	if err != nil {
 		return err
 	}
@@ -83,19 +84,4 @@ func PullVMDirectory(
 
 	return diskpuller.PullDisks(ctx, client, reference, vmDir, concurrency, disks, nameFunc,
 		annotations.AnnotationTartUncompressedSize, decompressorFunc)
-}
-
-func pullBlob(
-	ctx context.Context,
-	client *regclient.RegClient,
-	reference ref.Ref,
-	descriptor types.Descriptor,
-) ([]byte, error) {
-	blobReader, err := client.BlobGet(ctx, reference, descriptor)
-	if err != nil {
-		return nil, err
-	}
-	defer blobReader.Close()
-
-	return io.ReadAll(blobReader)
 }

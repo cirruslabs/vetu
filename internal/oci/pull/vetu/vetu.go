@@ -6,6 +6,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/oci/annotations"
 	"github.com/cirruslabs/vetu/internal/oci/diskpuller"
 	"github.com/cirruslabs/vetu/internal/oci/mediatypes"
+	"github.com/cirruslabs/vetu/internal/oci/pull/pullhelper"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/pierrec/lz4/v4"
@@ -43,7 +44,7 @@ func PullVMDirectory(
 	// Process VM's config
 	fmt.Println("pulling config...")
 
-	vmConfigBytes, err := pullBlob(ctx, client, reference, vmConfigs[0])
+	vmConfigBytes, err := pullhelper.PullBlob(ctx, client, reference, vmConfigs[0])
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func PullVMDirectory(
 	// Process VM's kernel
 	fmt.Println("pulling kernel...")
 
-	vmKernelBytes, err := pullBlob(ctx, client, reference, vmKernels[0])
+	vmKernelBytes, err := pullhelper.PullBlob(ctx, client, reference, vmKernels[0])
 	if err != nil {
 		return err
 	}
@@ -90,7 +91,7 @@ func PullVMDirectory(
 
 		fmt.Println("pulling initramfs...")
 
-		vmInitramfsBytes, err := pullBlob(ctx, client, reference, vmInitramfses[0])
+		vmInitramfsBytes, err := pullhelper.PullBlob(ctx, client, reference, vmInitramfses[0])
 		if err != nil {
 			return err
 		}
@@ -129,19 +130,4 @@ func PullVMDirectory(
 
 	return diskpuller.PullDisks(ctx, client, reference, vmDir, concurrency, disks, nameFunc,
 		annotations.AnnotationUncompressedSize, decompressorFunc)
-}
-
-func pullBlob(
-	ctx context.Context,
-	client *regclient.RegClient,
-	reference ref.Ref,
-	descriptor types.Descriptor,
-) ([]byte, error) {
-	blobReader, err := client.BlobGet(ctx, reference, descriptor)
-	if err != nil {
-		return nil, err
-	}
-	defer blobReader.Close()
-
-	return io.ReadAll(blobReader)
 }
