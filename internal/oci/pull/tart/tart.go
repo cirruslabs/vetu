@@ -8,6 +8,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/oci/mediatypes"
 	"github.com/cirruslabs/vetu/internal/oci/pull/pullhelper"
 	"github.com/cirruslabs/vetu/internal/oci/pull/tart/applestream"
+	"github.com/cirruslabs/vetu/internal/oci/pull/tart/hypervisorfw"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/regclient/regclient"
@@ -64,6 +65,14 @@ func PullVMDirectory(
 	}
 
 	if err := vmDir.SetConfig(vmConfig); err != nil {
+		return err
+	}
+
+	// Download latest Hypervisor Firmware since
+	// Tart VM images have no separate kernel
+	fmt.Println("downloading latest Hypervisor Firmware...")
+
+	if err := hypervisorfw.Fetch(ctx, vmDir.KernelPath()); err != nil {
 		return err
 	}
 
