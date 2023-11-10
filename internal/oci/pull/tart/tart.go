@@ -17,6 +17,8 @@ import (
 	"io"
 )
 
+const diskName = "disk.img"
+
 func PullVMDirectory(
 	ctx context.Context,
 	client *regclient.RegClient,
@@ -53,6 +55,13 @@ func PullVMDirectory(
 		return err
 	}
 
+	// Inject a single disk
+	vmConfig.Disks = []vmconfig.Disk{
+		{
+			Name: diskName,
+		},
+	}
+
 	if err := vmDir.SetConfig(vmConfig); err != nil {
 		return err
 	}
@@ -65,7 +74,7 @@ func PullVMDirectory(
 	// Pull VM's disks
 	nameFunc := func(disk types.Descriptor) (string, error) {
 		// Tart VM images have only one disk
-		return "disk.img", nil
+		return diskName, nil
 	}
 
 	decompressorFunc := func(r io.Reader) io.Reader {
