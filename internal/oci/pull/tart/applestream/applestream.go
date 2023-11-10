@@ -44,6 +44,12 @@ func NewReader(r io.Reader) *Reader {
 }
 
 func (reader *Reader) Read(p []byte) (n int, err error) {
+	// Do not process next blocks if we have enough uncompressed data
+	// to feed to the reader. This prevents high memory consumption.
+	if reader.uncompressed.Len() >= len(p) {
+		return reader.uncompressed.Read(p)
+	}
+
 	if !reader.underlyingReaderEOF {
 		if err := reader.processNextBlock(); err != nil {
 			return 0, err
