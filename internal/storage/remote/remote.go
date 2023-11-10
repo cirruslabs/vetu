@@ -264,10 +264,6 @@ func gc() error {
 
 		// Only garbage-collect paths that were not pulled explicitly
 		vmDir, err := vmdirectory.Load(managedPath)
-		fmt.Println(vmDir, err)
-		if vmDir != nil {
-			fmt.Println(vmDir.ExplicitlyPulled())
-		}
 		if err == nil && vmDir.ExplicitlyPulled() {
 			continue
 		}
