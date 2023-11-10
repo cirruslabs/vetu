@@ -9,6 +9,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/oci/pull/pullhelper"
 	"github.com/cirruslabs/vetu/internal/oci/pull/tart/applestream"
 	"github.com/cirruslabs/vetu/internal/oci/pull/tart/hypervisorfw"
+	"github.com/cirruslabs/vetu/internal/oci/pull/tart/tartconfig"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/regclient/regclient"
@@ -44,25 +45,34 @@ func PullVMDirectory(
 			mediatypes.MediaTypeTartConfig, len(vmConfigs))
 	}
 
-	// Process VM's config
+	// Pull and process Tart VM's config
 	fmt.Println("pulling config...")
 
-	vmConfigBytes, err := pullhelper.PullBlob(ctx, client, reference, vmConfigs[0])
+	tartConfigBytes, err := pullhelper.PullBlob(ctx, client, reference, vmConfigs[0])
 	if err != nil {
 		return err
 	}
 
-	vmConfig, err := vmconfig.NewFromJSON(vmConfigBytes)
+	tartConfig, err := tartconfig.NewFromJSON(tartConfigBytes)
 	if err != nil {
 		return err
 	}
 
-	// Inject a single disk
+	if tartConfig.OS != "linux" {
+		return fmt.Errorf("you're attempting to pull a Tart VM that's built for %q, "+
+			"but only \"linux\" is currently supported", tartConfig.OS)
+	}
+
+	// Create a Vetu-native VM config
+	vmConfig := vmconfig.New()
+
+	vmConfig.Arch = tartConfig.Arch
 	vmConfig.Disks = []vmconfig.Disk{
-		{
-			Name: diskName,
-		},
+		{Name: diskName},
 	}
+	vmConfig.CPUCount = tartConfig.CPUCount
+	vmConfig.MemorySize = tartConfig.MemorySize
+	vmConfig.MACAddress = tartConfig.MACAddress
 
 	if err := vmDir.SetConfig(vmConfig); err != nil {
 		return err
