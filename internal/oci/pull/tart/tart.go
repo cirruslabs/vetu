@@ -8,10 +8,10 @@ import (
 	"github.com/cirruslabs/vetu/internal/oci/mediatypes"
 	"github.com/cirruslabs/vetu/internal/oci/pull/pullhelper"
 	"github.com/cirruslabs/vetu/internal/oci/pull/tart/applestream"
-	"github.com/cirruslabs/vetu/internal/oci/pull/tart/hypervisorfw"
 	"github.com/cirruslabs/vetu/internal/oci/pull/tart/tartconfig"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
+	cp "github.com/otiai10/copy"
 	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/types"
 	manifestpkg "github.com/regclient/regclient/types/manifest"
@@ -78,11 +78,11 @@ func PullVMDirectory(
 		return err
 	}
 
-	// Download latest Hypervisor Firmware since
+	// Copy latest Hypervisor Firmware since
 	// Tart VM images have no separate kernel
-	fmt.Println("downloading latest Hypervisor Firmware...")
+	fmt.Println("copying EDK2 firmware to use as a kernel...")
 
-	if err := hypervisorfw.Fetch(ctx, vmDir.KernelPath()); err != nil {
+	if err := cp.Copy("/usr/share/cloud-hypervisor/CLOUDHV_EFI.fd", vmDir.KernelPath()); err != nil {
 		return err
 	}
 
