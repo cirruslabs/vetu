@@ -131,6 +131,9 @@ func (reader *Reader) processNextBlock() error {
 			return fmt.Errorf("%w: failed to read uncompressed bytes: %v", ErrFailed, err)
 		}
 
+		// Update LZ4 dictionary
+		reader.lz4Dict = uncompressedBytes
+
 		// Store the uncompressed data
 		_, _ = reader.uncompressed.Write(uncompressedBytes)
 	case bytes.Equal(blockMarker, blockMarkerEOF):
