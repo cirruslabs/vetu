@@ -95,13 +95,19 @@ func (reader *Reader) processNextBlock() error {
 
 		// Decompress compressed block's data
 		uncompressedBytes := make([]byte, uncompressedSize)
+
 		uncompressedN, err := lz4.UncompressBlockWithDict(compressedBytes, uncompressedBytes, reader.lz4Dict)
 		if err != nil {
 			return fmt.Errorf("%w: LZ4 failed to decompress the block: %v", ErrFailed, err)
 		}
 
+		if uncompressedSize != uint32(uncompressedN) {
+			return fmt.Errorf("%w: compressed block advertised %d bytes, but LZ4 uncompressed "+
+				"%d bytes", ErrFailed, uncompressedSize, uncompressedN)
+		}
+
 		// Update LZ4 dictionary
-		reader.lz4Dict = uncompressedBytes[:uncompressedN]
+		reader.lz4Dict = uncompressedBytes
 
 		// Store the uncompressed data
 		_, _ = reader.uncompressed.Write(uncompressedBytes[:uncompressedN])
