@@ -6,4 +6,4 @@ RUN apt-get update && apt-get -y install qemu-utils libcap2-bin iputils-ping gen
 # Install Cloud Hypervisor
 RUN echo 'deb http://download.opensuse.org/repositories/home:/cloud-hypervisor/Debian_12/ /' | tee /etc/apt/sources.list.d/home:cloud-hypervisor.list
 RUN curl -fsSL https://download.opensuse.org/repositories/home:cloud-hypervisor/Debian_12/Release.key | apt-key add -
-RUN apt-get update && apt-get -y install cloud-hypervisor
+RUN apt-get update && apt-get -y install cloud-hypervisor edk2-cloud-hypervisor
