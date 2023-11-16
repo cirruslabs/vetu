@@ -68,7 +68,7 @@ func runPull(cmd *cobra.Command, args []string) error {
 	fullyQualifiedRemoteName.Digest = manifest.GetDescriptor().Digest
 
 	// Pull the VM image if we don't have one already in cache
-	if remote.Exists(fullyQualifiedRemoteName) {
+	if !remote.Exists(fullyQualifiedRemoteName) {
 		if err := oci.PullVMDirectory(cmd.Context(), client, reference, manifest, vmDir, int(concurrency)); err != nil {
 			return err
 		}

@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	chunkerpkg "github.com/cirruslabs/vetu/internal/chunker"
+	"github.com/cirruslabs/vetu/internal/oci/annotations"
+	"github.com/cirruslabs/vetu/internal/oci/mediatypes"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
+	"github.com/dustin/go-humanize"
 	"github.com/opencontainers/go-digest"
 	"github.com/pierrec/lz4/v4"
 	"github.com/regclient/regclient"
@@ -23,6 +26,8 @@ import (
 	"runtime"
 	"strconv"
 )
+
+const targetDiskLayerSizeBytes = 500 * humanize.MByte
 
 func PushVMDirectory(
 	ctx context.Context,
@@ -60,7 +65,7 @@ func PushVMDirectory(
 	fmt.Println("pushing config...")
 
 	vmConfigDesc, err := pushFile(ctx, client, reference, vmDir.ConfigPath(),
-		MediaTypeVetuConfig, nil)
+		mediatypes.MediaTypeConfig, nil)
 	if err != nil {
 		return "", err
 	}
@@ -70,7 +75,7 @@ func PushVMDirectory(
 	fmt.Println("pushing kernel...")
 
 	vmKernelDesc, err := pushFile(ctx, client, reference, vmDir.KernelPath(),
-		MediaTypeVetuKernel, nil)
+		mediatypes.MediaTypeKernel, nil)
 	if err != nil {
 		return "", err
 	}
@@ -88,7 +93,7 @@ func PushVMDirectory(
 		fmt.Println("pushing initramfs...")
 
 		vmInitramfsDesc, err := pushBytes(ctx, client, reference, initramfsBytes,
-			MediaTypeVetuInitramfs, nil, nil)
+			mediatypes.MediaTypeInitramfs, nil, nil)
 		if err != nil {
 			return "", err
 		}
@@ -224,13 +229,13 @@ func pushDisk(
 
 	for compressedChunk := range chunker.Chunks() {
 		annotations := map[string]string{
-			AnnotationName:               diskName,
-			AnnotationUncompressedSize:   strconv.FormatInt(compressedChunk.UncompressedSize, 10),
-			AnnotationUncompressedDigest: compressedChunk.UncompressedDigest.String(),
+			annotations.AnnotationName:               diskName,
+			annotations.AnnotationUncompressedSize:   strconv.FormatInt(compressedChunk.UncompressedSize, 10),
+			annotations.AnnotationUncompressedDigest: compressedChunk.UncompressedDigest.String(),
 		}
 
 		diskDesc, err := pushBytes(ctx, client, reference, compressedChunk.Data,
-			MediaTypeVetuDisk, annotations, progressBar)
+			mediatypes.MediaTypeDisk, annotations, progressBar)
 		if err != nil {
 			return nil, err
 		}

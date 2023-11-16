@@ -8,9 +8,12 @@ import (
 	"github.com/cirruslabs/vetu/internal/network/bridged"
 	"github.com/cirruslabs/vetu/internal/network/software"
 	"github.com/cirruslabs/vetu/internal/storage/local"
+	"github.com/cirruslabs/vetu/internal/vmconfig"
+	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -46,6 +49,12 @@ func runRun(cmd *cobra.Command, args []string) error {
 
 	vmConfig := vmDir.Config()
 
+	// Validate VM's architecture
+	if vmConfig.Arch != runtime.GOARCH {
+		return fmt.Errorf("this VM is built to run on %q, but you're running %q",
+			vmConfig.Arch, runtime.GOARCH)
+	}
+
 	// Initialize network
 	var network network.Network
 
@@ -75,9 +84,13 @@ func runRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Disks
-	for _, disk := range vmConfig.Disks {
-		targetDiskPath := filepath.Join(vmDir.Path(), disk.Name)
-		hvArgs = append(hvArgs, "--disk", fmt.Sprintf("path=%s", targetDiskPath))
+	diskArguments := lo.Map(vmConfig.Disks, func(disk vmconfig.Disk, index int) string {
+		path := filepath.Join(vmDir.Path(), disk.Name)
+		return fmt.Sprintf("path=%s", path)
+	})
+	if len(diskArguments) != 0 {
+		hvArgs = append(hvArgs, "--disk")
+		hvArgs = append(hvArgs, diskArguments...)
 	}
 
 	// CPU and memory
