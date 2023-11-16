@@ -4,7 +4,7 @@ ec2_task:
     role_session_name: cirrus
     region: us-east-2
   ec2_instance:
-    image: /aws/service/ecs/optimized-ami/amazon-linux-2/arm64/recommended
+    image: ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*
     architecture: arm64
     region: us-east-2
     type: a1.metal
