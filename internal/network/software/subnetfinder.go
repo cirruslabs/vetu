@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-func FindAvailableSubnet(prefixLen ipaddr.BitCount) (net.IP, net.IP, net.IP, *ipaddr.IPv4Address, error) {
+func FindAvailableSubnet(prefixLen ipaddr.BitCount) (net.IP, net.IP, net.IP, net.IPNet, error) {
 	// Create a trie that will contain the address space available to us
 	availableAddressSpace := ipaddr.NewTrie[*ipaddr.IPv4Address]()
 
@@ -26,7 +26,7 @@ func FindAvailableSubnet(prefixLen ipaddr.BitCount) (net.IP, net.IP, net.IP, *ip
 	// Subtract address space that is already utilized on the host from the trie
 	interfaceAddrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, net.IPNet{}, err
 	}
 
 	for _, interfaceAddrUncooked := range interfaceAddrs {
@@ -82,9 +82,12 @@ func FindAvailableSubnet(prefixLen ipaddr.BitCount) (net.IP, net.IP, net.IP, *ip
 		secondHost := desiredSubnetIter.Next()
 		thirdHost := desiredSubnetIter.Next()
 
-		return firstHost.GetNetIP(), secondHost.GetNetIP(), thirdHost.GetNetIP(), desiredSubnet, nil
+		return firstHost.GetNetIP(), secondHost.GetNetIP(), thirdHost.GetNetIP(), net.IPNet{
+			IP:   desiredSubnet.GetNetIP(),
+			Mask: desiredSubnet.GetNetworkMask().Bytes(),
+		}, nil
 	}
 
-	return nil, nil, nil, nil,
+	return nil, nil, nil, net.IPNet{},
 		fmt.Errorf("no available subnet with prefix length of %d is found", prefixLen)
 }

@@ -71,7 +71,7 @@ func New(vmHardwareAddr net.HardwareAddr) (*Network, error) {
 	if err := netlink.AddrAdd(vmLink, &netlink.Addr{
 		IPNet: &net.IPNet{
 			IP:   hostIP,
-			Mask: network.GetNetworkMask().Bytes(),
+			Mask: network.Mask,
 		},
 	}); err != nil {
 		return nil, fmt.Errorf("%w: failed to assign address %s to an interface %q: %v",
@@ -84,7 +84,7 @@ func New(vmHardwareAddr net.HardwareAddr) (*Network, error) {
 			ErrInitFailed, vmLink.Attrs().Name, err)
 	}
 
-	gvisor, err := gvisor.New(rawSocketFD, gatewayIP)
+	gvisor, err := gvisor.New(rawSocketFD, gatewayIP, network)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInitFailed, err)
 	}
