@@ -33,7 +33,7 @@ type GVisor struct {
 	st *stack.Stack
 }
 
-func New(rawSocketFD int, gatewayIP net.IP) (*GVisor, error) {
+func New(rawSocketFD int, gatewayIP net.IP, network net.IPNet) (*GVisor, error) {
 	// Create network stack
 	st := stack.New(stack.Options{
 		NetworkProtocols: []stack.NetworkProtocolFactory{
@@ -109,11 +109,11 @@ func New(rawSocketFD int, gatewayIP net.IP) (*GVisor, error) {
 
 	// Configure TCP forwarder
 	tcpForwarder := tcp.NewForwarder(st, 0, 1000, gvisor.forwardTCP)
-	st.SetTransportProtocolHandler(tcp.ProtocolNumber, withForwardingFilter(tcpForwarder.HandlePacket))
+	st.SetTransportProtocolHandler(tcp.ProtocolNumber, withForwardingFilter(tcpForwarder.HandlePacket, network))
 
 	// Configure UDP forwarder
 	udpForwarder := udp.NewForwarder(st, gvisor.forwardUDP)
-	st.SetTransportProtocolHandler(udp.ProtocolNumber, withForwardingFilter(udpForwarder.HandlePacket))
+	st.SetTransportProtocolHandler(udp.ProtocolNumber, withForwardingFilter(udpForwarder.HandlePacket, network))
 
 	return gvisor, nil
 }
@@ -212,7 +212,7 @@ func transferWithTimeout(dst net.Conn, src net.Conn, timeout time.Duration) {
 	}
 }
 
-func withForwardingFilter(h gVisorHandler) gVisorHandler {
+func withForwardingFilter(h gVisorHandler, network net.IPNet) gVisorHandler {
 	return func(id stack.TransportEndpointID, ptr stack.PacketBufferPtr) bool {
 		// A "local" address presented to us as a gateway
 		// is actually a remote address that the guest wants
@@ -225,12 +225,21 @@ func withForwardingFilter(h gVisorHandler) gVisorHandler {
 		}
 
 		// Convert to net.IP
+		localIPRaw := remoteAddress.As4()
+		localIP := net.IPv4(localIPRaw[0], localIPRaw[1], localIPRaw[2], localIPRaw[3])
 		remoteIPRaw := remoteAddress.As4()
 		remoteIP := net.IPv4(remoteIPRaw[0], remoteIPRaw[1], remoteIPRaw[2], remoteIPRaw[3])
 
-		// Only forward global unicast addresses, including private IPv4 address space
+		// Skip handling of the traffic between the Vetu network endpoints
+		// to prevent duplicate packets due to the promiscuous mode enabled
+		if network.Contains(localIP) && network.Contains(remoteIP) {
+			return true
+		}
+
+		// Skip handling of the traffic to remote IP addresses
+		// that are not globally-unicasted and not private
 		if !remoteIP.IsGlobalUnicast() {
-			return false
+			return true
 		}
 
 		return h(id, ptr)
