@@ -67,7 +67,7 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	table := uitable.New()
 
-	table.AddRow("Source", "Name", "Size")
+	table.AddRow("Source", "Name", "Size", "State")
 
 	for source, list := range desiredSources {
 		if err := addVMsToTable(table, source, list); err != nil {
@@ -94,7 +94,7 @@ func addVMsToTable(table *uitable.Table, source string, list listFunc) error {
 			return err
 		}
 
-		table.AddRow(source, name, humanize.IBytes(size))
+		table.AddRow(source, name, humanize.IBytes(size), vmDir.State())
 	}
 
 	return nil

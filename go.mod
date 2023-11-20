@@ -3,6 +3,7 @@ module github.com/cirruslabs/vetu
 go 1.21.0
 
 require (
+	github.com/avast/retry-go/v4 v4.5.1
 	github.com/distribution/reference v0.5.0
 	github.com/docker/cli v24.0.6+incompatible
 	github.com/dustin/go-humanize v1.0.1

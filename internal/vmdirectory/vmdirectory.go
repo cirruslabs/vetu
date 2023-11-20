@@ -3,6 +3,7 @@ package vmdirectory
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"io/fs"
 	"os"
@@ -13,6 +14,13 @@ type VMDirectory struct {
 	baseDir  string
 	vmConfig vmconfig.VMConfig
 }
+
+type State string
+
+const (
+	StateStopped State = "stopped"
+	StateRunning State = "running"
+)
 
 func Initialize(path string) (*VMDirectory, error) {
 	vmDir := &VMDirectory{
@@ -68,6 +76,28 @@ func (vmDir *VMDirectory) Size() (uint64, error) {
 	}
 
 	return result, nil
+}
+
+func (vmDir *VMDirectory) Running() bool {
+	lock, err := filelock.New(vmDir.ConfigPath())
+	if err != nil {
+		return false
+	}
+
+	pid, err := lock.Pid()
+	if err != nil {
+		return false
+	}
+
+	return pid != 0
+}
+
+func (vmDir *VMDirectory) State() State {
+	if vmDir.Running() {
+		return StateRunning
+	} else {
+		return StateStopped
+	}
 }
 
 func (vmDir *VMDirectory) ConfigPath() string {
