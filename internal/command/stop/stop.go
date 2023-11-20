@@ -1,12 +1,15 @@
 package stop
 
 import (
+	"context"
 	"fmt"
+	"github.com/avast/retry-go"
 	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
+	"time"
 )
 
 var timeout uint16
@@ -33,11 +36,13 @@ func runStop(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Open VM's directory
 	vmDir, err := local.Open(localName)
 	if err != nil {
 		return err
 	}
 
+	// Find the PID of the "vetu run" process running this VM
 	lock, err := filelock.New(vmDir.ConfigPath())
 	if err != nil {
 		return err
@@ -52,5 +57,32 @@ func runStop(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("VM %q is not running", name)
 	}
 
-	return unix.Kill(int(pid), unix.SIGKILL)
+	// Try to gracefully terminate the VM
+	_ = unix.Kill(int(pid), unix.SIGINT)
+
+	gracefulTerminationCtx, gracefulTerminationCtxCancel := context.WithTimeout(cmd.Context(),
+		time.Duration(timeout)*time.Second)
+	defer gracefulTerminationCtxCancel()
+
+	err = retry.Do(func() error {
+		pid, err := lock.Pid()
+		if err != nil {
+			return err
+		}
+
+		if pid == 0 {
+			return nil
+		}
+
+		return fmt.Errorf("VM is still running")
+	}, retry.Context(gracefulTerminationCtx),
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(100*time.Millisecond),
+	)
+	if err != nil {
+		// Forcefully terminate the VM
+		return unix.Kill(int(pid), unix.SIGKILL)
+	}
+
+	return nil
 }
