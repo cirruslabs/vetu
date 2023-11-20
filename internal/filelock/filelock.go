@@ -57,6 +57,8 @@ func (fl *FileLock) lockWrapper(operation int, lockType int16) (*unix.Flock_t, e
 	result := &unix.Flock_t{
 		Type:   lockType,
 		Whence: unix.SEEK_SET,
+		Start:  0,
+		Len:    0,
 	}
 
 	if err := unix.FcntlFlock(fl.fd, operation, result); err != nil {
