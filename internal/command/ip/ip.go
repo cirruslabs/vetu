@@ -47,8 +47,8 @@ func runIP(cmd *cobra.Command, args []string) error {
 
 	hardwareAddr := vmDir.Config().MACAddress.HardwareAddr
 
-	subCtx, cancel := context.WithTimeout(cmd.Context(), time.Duration(wait)*time.Second)
-	defer cancel()
+	waitCtx, waitCtxCancel := context.WithTimeout(cmd.Context(), time.Duration(wait)*time.Second)
+	defer waitCtxCancel()
 
 	err = retry.Do(func() error {
 		ip, err := arpTableLookup(hardwareAddr)
@@ -59,7 +59,7 @@ func runIP(cmd *cobra.Command, args []string) error {
 		fmt.Println(ip)
 
 		return nil
-	}, retry.Context(subCtx),
+	}, retry.Context(waitCtx),
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(true),
