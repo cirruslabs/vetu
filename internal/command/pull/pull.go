@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"errors"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
 	"github.com/cirruslabs/vetu/internal/oci"
@@ -33,6 +34,12 @@ func runPull(cmd *cobra.Command, args []string) error {
 	// Parse name
 	remoteName, err := remotename.NewFromString(name)
 	if err != nil {
+		if errors.Is(err, remotename.ErrNotARemoteName) {
+			fmt.Printf("%q is a local image, nothing to pull here!\n", name)
+
+			return nil
+		}
+
 		return err
 	}
 
