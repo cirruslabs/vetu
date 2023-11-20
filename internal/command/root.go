@@ -12,6 +12,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/command/push"
 	"github.com/cirruslabs/vetu/internal/command/run"
 	"github.com/cirruslabs/vetu/internal/command/set"
+	"github.com/cirruslabs/vetu/internal/command/stop"
 	"github.com/cirruslabs/vetu/internal/version"
 	"github.com/spf13/cobra"
 )
@@ -35,6 +36,7 @@ func NewRootCmd() *cobra.Command {
 		ip.NewCommand(),
 		pull.NewCommand(),
 		push.NewCommand(),
+		stop.NewCommand(),
 		deletepkg.NewCommand(),
 	)
 

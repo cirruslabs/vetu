@@ -3,6 +3,7 @@ package run
 import (
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/externalcommand/cloudhypervisor"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/network"
 	"github.com/cirruslabs/vetu/internal/network/bridged"
@@ -46,6 +47,15 @@ func runRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Acquire a lock
+	lock, err := filelock.New(vmDir.ConfigPath())
+	if err != nil {
+		return fmt.Errorf("VM %q is already running", name)
+	}
+	defer func() {
+		_ = lock.Unlock()
+	}()
 
 	vmConfig := vmDir.Config()
 
