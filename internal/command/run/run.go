@@ -48,7 +48,9 @@ func runRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Acquire a lock before reading the config[1]
+	vmConfig := vmDir.Config()
+
+	// Acquire a lock after reading the config[1]
 	//
 	//nolint:lll
 	// [1]: https://github.com/cirruslabs/tart/blob/8c011623be2ed8254cd91b15c336c2fff2b6f9be/Sources/tart/Commands/Run.swift#L209-L220
@@ -59,8 +61,6 @@ func runRun(cmd *cobra.Command, args []string) error {
 	if err := lock.Trylock(); err != nil {
 		return fmt.Errorf("VM %q is already running", name)
 	}
-
-	vmConfig := vmDir.Config()
 
 	// Validate VM's architecture
 	if vmConfig.Arch != runtime.GOARCH {
