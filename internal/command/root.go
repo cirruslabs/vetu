@@ -11,6 +11,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/command/pull"
 	"github.com/cirruslabs/vetu/internal/command/push"
 	"github.com/cirruslabs/vetu/internal/command/run"
+	"github.com/cirruslabs/vetu/internal/command/set"
 	"github.com/cirruslabs/vetu/internal/version"
 	"github.com/spf13/cobra"
 )
@@ -27,6 +28,7 @@ func NewRootCmd() *cobra.Command {
 		create.NewCommand(),
 		clone.NewCommand(),
 		run.NewCommand(),
+		set.NewCommand(),
 		list.NewCommand(),
 		login.NewCommand(),
 		logout.NewCommand(),
