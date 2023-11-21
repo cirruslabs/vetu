@@ -6,6 +6,12 @@ We say effortlessly, because the existing virtualization solutions like the trad
 
 Vetu builds on the success of [Tart](https://tart.run/) and abstracts all these peculiarities and makes the virtualization as easy as running containers.
 
+Here are just some of the cool features that Vetu inherited from Tart:
+
+* ability to easily distribute the VM images by pushing them to any OCI-compatible container registry and pulling them from any place where your workloads are running
+* effortless SSH'ing into VMs (see [Usage](#usage) for an example)
+* [Cirrus CLI](https://github.com/cirruslabs/cirrus-cli) integration
+
 ## Installation
 
 * [Debian-based distributions](INSTALL.md#debian-based-distributions) (Debian, Ubuntu, etc.)
