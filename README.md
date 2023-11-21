@@ -8,8 +8,8 @@ Vetu builds on the success of [Tart](https://tart.run/) and abstracts all these 
 
 Here are just some of the cool features that Vetu inherited from Tart:
 
-* ability to easily distribute the VM images by pushing them to any OCI-compatible container registry and pulling them from any place where your workloads are running
-* effortless SSH'ing into VMs (see [Usage](#usage) for an example)
+* Ability to easily distribute VM images by integrating with OCI-compatible container registries. Push and pull virtual machines like they are containers.
+* Effortless SSH'ing into VMs (see [Usage](#usage) for an example)
 * [Cirrus CLI](https://github.com/cirruslabs/cirrus-cli) integration
 
 ## Installation
