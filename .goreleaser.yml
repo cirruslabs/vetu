@@ -36,9 +36,6 @@ nfpms:
     section: misc
     scripts:
       postinstall: "scripts/postinstall.sh"
-    dependencies:
-      - cloud-hypervisor
-      - edk2-cloud-hypervisor
     formats:
       - deb
       - rpm
