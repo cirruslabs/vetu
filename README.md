@@ -2,7 +2,7 @@
 
 _vetu_ is virtualization toolset to effortlessly run [Cloud Hypervisor](https://www.cloudhypervisor.org/)-backed virtual machines on Linux hosts.
 
-We say effortlessly, because the existing virtualization solutions like the old-school [QEMU](https://www.qemu.org/) and the new-wave [Firecracker](https://firecracker-microvm.github.io/) and Cloud Hypervisor provide lots of options and require users to essentially build a tooling on top of them to be able to simply run a basic VM.
+We say effortlessly, because the existing virtualization solutions like the traditional [QEMU](https://www.qemu.org/) and the new-wave [Firecracker](https://firecracker-microvm.github.io/) and Cloud Hypervisor provide lots of options and require users to essentially build a tooling on top of them to be able to simply run a basic VM.
 
 Vetu builds on the success of [Tart](https://tart.run/) and abstracts all these peculiarities and makes the virtualization as easy as running containers.
 
