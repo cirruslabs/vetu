@@ -47,8 +47,20 @@ func runIP(cmd *cobra.Command, args []string) error {
 
 	hardwareAddr := vmDir.Config().MACAddress.HardwareAddr
 
-	waitCtx, waitCtxCancel := context.WithTimeout(cmd.Context(), time.Duration(wait)*time.Second)
-	defer waitCtxCancel()
+	retryOpts := []retry.Option{
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(1 * time.Second),
+		retry.LastErrorOnly(true),
+	}
+
+	if wait == 0 {
+		retryOpts = append(retryOpts, retry.Context(cmd.Context()), retry.Attempts(1))
+	} else {
+		waitCtx, waitCtxCancel := context.WithTimeout(cmd.Context(), time.Duration(wait)*time.Second)
+		defer waitCtxCancel()
+
+		retryOpts = append(retryOpts, retry.Context(waitCtx), retry.Attempts(0))
+	}
 
 	err = retry.Do(func() error {
 		ip, err := arpTableLookup(hardwareAddr)
@@ -59,11 +71,7 @@ func runIP(cmd *cobra.Command, args []string) error {
 		fmt.Println(ip)
 
 		return nil
-	}, retry.Context(waitCtx),
-		retry.DelayType(retry.FixedDelay),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-	)
+	}, retryOpts...)
 	if errors.Is(err, context.DeadlineExceeded) {
 		return ErrIPNotFound
 	}
