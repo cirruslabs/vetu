@@ -1,4 +1,4 @@
-# vetu
+# **vetu** - **V**irtualization that is **E**asy **T**o **U**se
 
 _vetu_ is virtualization toolset to effortlessly run [Cloud Hypervisor](https://www.cloudhypervisor.org/)-backed virtual machines on Linux hosts.
 
