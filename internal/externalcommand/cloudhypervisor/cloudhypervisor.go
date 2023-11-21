@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/binaryfetcher"
 	"os/exec"
-	"path"
 	"runtime"
 )
 
 const (
 	binaryName = "cloud-hypervisor"
-	baseURL    = "https://github.com/cloud-hypervisor/cloud-hypervisor/releases/latest/download"
+	baseURL    = "https://github.com/cloud-hypervisor/cloud-hypervisor/releases/latest/download/"
 )
 
 var goarchToDownloadURL = map[string]string{
-	"amd64": path.Join(baseURL, "cloud-hypervisor-static"),
-	"arm64": path.Join(baseURL, "cloud-hypervisor-static-aarch64"),
+	"amd64": baseURL + "cloud-hypervisor-static",
+	"arm64": baseURL + "cloud-hypervisor-static-aarch64",
 }
 
 func CloudHypervisor(ctx context.Context, args ...string) (*exec.Cmd, error) {

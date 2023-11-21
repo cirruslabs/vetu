@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/binaryfetcher"
 	"os"
-	"path"
 	"runtime"
 )
 
 const (
 	edk2BinaryPath = "/usr/share/cloud-hypervisor/CLOUDHV_EFI.fd"
-	baseURL        = "https://github.com/cirruslabs/rust-hypervisor-firmware/releases/latest/download"
+	baseURL        = "https://github.com/cirruslabs/rust-hypervisor-firmware/releases/latest/download/"
 )
 
 var goarchToDownloadURL = map[string]string{
-	"amd64": path.Join(baseURL, "hypervisor-fw"),
-	"arm64": path.Join(baseURL, "hypervisor-fw-aarch64"),
+	"amd64": baseURL + "hypervisor-fw",
+	"arm64": baseURL + "hypervisor-fw-aarch64",
 }
 
 func Firmware(ctx context.Context) (string, string, error) {
