@@ -34,9 +34,8 @@ nfpms:
     maintainer: support@cirruslabs.org
     description: CLI for executing Cirrus tasks locally and in any CI
     section: misc
-    dependencies:
-      - cloud-hypervisor
-      - edk2-cloud-hypervisor
+    scripts:
+      postinstall: "scripts/postinstall.sh"
     formats:
       - deb
       - rpm

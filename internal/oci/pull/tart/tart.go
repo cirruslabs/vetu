@@ -3,6 +3,7 @@ package tart
 import (
 	"context"
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/externalbinary/firmware"
 	"github.com/cirruslabs/vetu/internal/oci/annotations"
 	"github.com/cirruslabs/vetu/internal/oci/diskpuller"
 	"github.com/cirruslabs/vetu/internal/oci/mediatypes"
@@ -80,9 +81,14 @@ func PullVMDirectory(
 
 	// Copy latest Hypervisor Firmware since
 	// Tart VM images have no separate kernel
-	fmt.Println("copying EDK2 firmware to use as a kernel...")
+	firmwarePath, firmwareDesc, err := firmware.Firmware(ctx)
+	if err != nil {
+		return err
+	}
 
-	if err := cp.Copy("/usr/share/cloud-hypervisor/CLOUDHV_EFI.fd", vmDir.KernelPath()); err != nil {
+	fmt.Printf("copying %s to use as a kernel...\n", firmwareDesc)
+
+	if err := cp.Copy(firmwarePath, vmDir.KernelPath()); err != nil {
 		return err
 	}
 
