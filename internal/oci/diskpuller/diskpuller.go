@@ -96,7 +96,13 @@ func PullDisks(
 		humanize.Bytes(uint64(totalCompressedDisksSizeBytes)),
 		humanize.Bytes(uint64(totalUncompressedDisksSizeBytes)))
 
-	progressBar := progressbar.DefaultBytes(totalCompressedDisksSizeBytes)
+	var progressBar *progressbar.ProgressBar
+
+	if totalCompressedDisksSizeBytes > 0 {
+		progressBar = progressbar.DefaultBytes(totalCompressedDisksSizeBytes)
+	} else {
+		progressBar = progressbar.DefaultBytesSilent(-1)
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(concurrency)
