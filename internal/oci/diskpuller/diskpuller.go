@@ -3,6 +3,7 @@ package diskpuller
 import (
 	"context"
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/sparseio"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/dustin/go-humanize"
 	"github.com/regclient/regclient"
@@ -160,9 +161,8 @@ func (diskTask *diskTask) process(
 	if err != nil {
 		return err
 	}
-	if _, err := diskFile.Seek(diskTask.Offset, io.SeekStart); err != nil {
-		return err
-	}
+
+	diskFileAtOffset := io.NewOffsetWriter(diskFile, diskTask.Offset)
 
 	// Pull disk layer from the OCI registry
 	blobReader, err := client.BlobGet(ctx, reference, diskTask.Desc)
@@ -175,7 +175,7 @@ func (diskTask *diskTask) process(
 	progressBarReader := progressbar.NewReader(blobReader, progressBar)
 	decompressor := initializeDecompressor(&progressBarReader)
 
-	if _, err := io.Copy(diskFile, decompressor); err != nil {
+	if err := sparseio.Copy(diskFileAtOffset, decompressor); err != nil {
 		return err
 	}
 
