@@ -13,7 +13,7 @@ func Load(reference ref.Ref, insecure bool) ([]config.Host, error) {
 	}
 
 	if insecure {
-		// Disable TLS for <>
+		// Disable TLS for all hosts retrieved from Docker configuration file
 		hosts = lo.Map(hosts, func(dockerHost config.Host, index int) config.Host {
 			dockerHost.TLS = config.TLSDisabled
 
@@ -24,9 +24,9 @@ func Load(reference ref.Ref, insecure bool) ([]config.Host, error) {
 		// by providing a TLS field override for the registry associated with the passed
 		// reference.
 		//
-		// This means that if the user wants to pull from 127.0.0.1:8080/a/b:latest insecurely,
-		// and Docker configuration contains no such registry, we'll force the regclient to
-		// disable TLS for that registry.
+		// This means that if the user wants to pull or push from 127.0.0.1:8080/a/b:latest
+		// insecurely and Docker configuration contains no such registry, we'll effectively
+		// force the regclient to disable TLS for that registry.
 		hosts = append(hosts, config.Host{
 			Name: reference.Registry,
 			TLS:  config.TLSDisabled,
