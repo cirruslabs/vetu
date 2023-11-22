@@ -5,6 +5,9 @@ import (
 	"fmt"
 	dockerconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/types"
+	"github.com/regclient/regclient"
+	"github.com/regclient/regclient/config"
+	"github.com/regclient/regclient/types/ref"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 	"io"
@@ -15,6 +18,7 @@ import (
 
 var username string
 var passwordStdin bool
+var noValidate bool
 
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -30,6 +34,8 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&passwordStdin, "password-stdin", false,
 		"receive the password from the standard input instead of asking it interactively "+
 			"(requires --username)")
+	cmd.Flags().BoolVar(&noValidate, "no-validate", false,
+		"skip validation of the OCI registry's credentials before logging-in")
 
 	return cmd
 }
@@ -41,6 +47,28 @@ func runLogin(cmd *cobra.Command, args []string) error {
 	username, password, err := retrieveCredentials()
 	if err != nil {
 		return err
+	}
+
+	if !noValidate {
+		// Create an OCI registry client that only has the provided credentials
+		client := regclient.New(regclient.WithConfigHost(config.Host{
+			Name:     registry,
+			Hostname: registry,
+			User:     username,
+			Pass:     password,
+		}))
+
+		// Create a reference that only has the Registry field set
+		reference, err := ref.NewHost(registry)
+		if err != nil {
+			return err
+		}
+
+		// Validate credentials
+		_, err = client.Ping(cmd.Context(), reference)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Store credentials
