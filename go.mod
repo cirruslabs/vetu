@@ -7,7 +7,7 @@ require (
 	github.com/distribution/reference v0.5.0
 	github.com/docker/cli v24.0.6+incompatible
 	github.com/dustin/go-humanize v1.0.1
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/gosuri/uitable v0.0.4
 	github.com/hashicorp/go-version v1.6.0
 	github.com/insomniacslk/dhcp v0.0.0-20230908212754-65c27093e38a
@@ -16,15 +16,15 @@ require (
 	github.com/otiai10/copy v1.12.0
 	github.com/pierrec/lz4/v4 v4.1.18
 	github.com/projectcalico/libcalico-go v1.7.3
-	github.com/regclient/regclient v0.5.2
+	github.com/regclient/regclient v0.5.4
 	github.com/samber/lo v1.38.1
 	github.com/schollz/progressbar/v3 v3.13.1
 	github.com/seancfoley/ipaddress-go v1.5.4
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	github.com/vishvananda/netlink v1.1.1-0.20211118161826-650dca95af54
-	golang.org/x/sys v0.12.0
-	golang.org/x/term v0.12.0
+	golang.org/x/sys v0.14.0
+	golang.org/x/term v0.14.0
 	gvisor.dev/gvisor v0.0.0-20230926030033-4af66e670562
 	inet.af/tcpproxy v0.0.0-20221017015627-91f861402626
 )

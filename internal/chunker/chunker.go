@@ -20,7 +20,8 @@ type Chunker struct {
 	initializeWriter InitializeWriterFunc
 
 	// State
-	chunks chan *Chunk
+	chunks  chan *Chunk
+	emitted bool
 
 	// Per-chunk state
 	buf              *bytes.Buffer
@@ -38,7 +39,7 @@ type Chunk struct {
 	UncompressedDigest digest.Digest
 }
 
-func NewChunker(chunkSize int, initializeWriter InitializeWriterFunc) *Chunker {
+func NewChunker(chunkSize int, initializeWriter InitializeWriterFunc) (*Chunker, error) {
 	chunker := &Chunker{
 		// Settings
 		chunkSize:        chunkSize,
@@ -48,9 +49,11 @@ func NewChunker(chunkSize int, initializeWriter InitializeWriterFunc) *Chunker {
 		chunks: make(chan *Chunk),
 	}
 
-	chunker.resetPerChunkState()
+	if err := chunker.resetPerChunkState(); err != nil {
+		return nil, err
+	}
 
-	return chunker
+	return chunker, nil
 }
 
 func (chunker *Chunker) Write(b []byte) (int, error) {
@@ -73,18 +76,11 @@ func (chunker *Chunker) Write(b []byte) (int, error) {
 			UncompressedSize:   chunker.uncompressedSize,
 			UncompressedDigest: digest.NewDigest(digest.SHA256, chunker.uncompressedHash),
 		}
+		chunker.emitted = true
 
-		chunker.resetPerChunkState()
-	}
-
-	// chunker.writer is nil resetPerChunkState(), so initialize it before using it
-	if chunker.writer == nil {
-		writer, err := chunker.initializeWriter(chunker.buf)
-		if err != nil {
+		if err := chunker.resetPerChunkState(); err != nil {
 			return 0, err
 		}
-
-		chunker.writer = writer
 	}
 
 	// Update uncompressed chunk size
@@ -114,8 +110,9 @@ func (chunker *Chunker) Close() error {
 		return err
 	}
 
-	// Only emit a chunk if we have some data available
-	if chunker.buf.Len() != 0 {
+	// Only emit a last chunk if we have some data available
+	// or there were no chunks emitted before
+	if chunker.buf.Len() != 0 || !chunker.emitted {
 		chunker.chunks <- &Chunk{
 			Data:               chunker.buf.Bytes(),
 			UncompressedSize:   chunker.uncompressedSize,
@@ -125,14 +122,19 @@ func (chunker *Chunker) Close() error {
 
 	close(chunker.chunks)
 
-	chunker.resetPerChunkState()
-
-	return nil
+	return chunker.resetPerChunkState()
 }
 
-func (chunker *Chunker) resetPerChunkState() {
+func (chunker *Chunker) resetPerChunkState() error {
 	chunker.buf = &bytes.Buffer{}
 	chunker.uncompressedSize = 0
 	chunker.uncompressedHash = sha256.New()
-	chunker.writer = nil
+
+	writer, err := chunker.initializeWriter(chunker.buf)
+	if err != nil {
+		return err
+	}
+	chunker.writer = writer
+
+	return nil
 }
