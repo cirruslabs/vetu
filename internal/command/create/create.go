@@ -7,6 +7,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/storage/temporary"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
+	cp "github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 	"path/filepath"
 )
@@ -63,7 +64,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	// Kernel
 	if kernel != "" {
-		if err := temporary.AtomicallyCopyThrough(kernel, vmDir.KernelPath()); err != nil {
+		if err := cp.Copy(kernel, vmDir.KernelPath()); err != nil {
 			return fmt.Errorf("failed to copy kernel to the VM's directory: %v", err)
 		}
 	} else {
@@ -72,7 +73,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	// Initramfs
 	if initramfs != "" {
-		if err := temporary.AtomicallyCopyThrough(initramfs, vmDir.InitramfsPath()); err != nil {
+		if err := cp.Copy(initramfs, vmDir.InitramfsPath()); err != nil {
 			return fmt.Errorf("failed to copy initramfs to the VM's directory: %v", err)
 		}
 	}
@@ -86,7 +87,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	for _, disk := range disks {
 		diskName := filepath.Base(disk)
 
-		if err := temporary.AtomicallyCopyThrough(disk, filepath.Join(vmDir.Path(), diskName)); err != nil {
+		if err := cp.Copy(disk, filepath.Join(vmDir.Path(), diskName)); err != nil {
 			return fmt.Errorf("failed to copy disk %q to the VM's directory: %v", diskName, err)
 		}
 
