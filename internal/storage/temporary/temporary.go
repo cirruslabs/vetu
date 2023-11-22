@@ -50,7 +50,7 @@ func AtomicallyCopyThrough(srcDir string, dstDir string) error {
 			return err
 		}
 
-		if err := sparseio.Copy(srcFile, dstFile); err != nil {
+		if err := sparseio.Copy(dstFile, srcFile); err != nil {
 			return err
 		}
 
