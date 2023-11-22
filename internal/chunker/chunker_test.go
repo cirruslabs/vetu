@@ -52,6 +52,36 @@ func TestSimple(t *testing.T) {
 	require.Equal(t, expectedChunks, actualChunks)
 }
 
+func TestNoWrites(t *testing.T) {
+	const chunkSize = 1 * 1024 * 1024
+
+	// Create a chunker and close it right away without doing any Write()s
+	chunker, err := chunkerpkg.NewChunker(chunkSize, func(w io.Writer) (io.WriteCloser, error) {
+		return WriteNopCloser(w), nil
+	})
+	require.NoError(t, err)
+	go func() {
+		if err := chunker.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	// Ensure that exactly one empty chunk is emitted as a result of the above
+	var actualChunks []*chunkerpkg.Chunk
+
+	for chunk := range chunker.Chunks() {
+		actualChunks = append(actualChunks, chunk)
+	}
+
+	require.Equal(t, []*chunkerpkg.Chunk{
+		{
+			Data:               nil,
+			UncompressedSize:   0,
+			UncompressedDigest: digest.FromBytes([]byte{}),
+		},
+	}, actualChunks)
+}
+
 type writeNopCloser struct {
 	io.Writer
 }

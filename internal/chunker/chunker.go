@@ -20,7 +20,8 @@ type Chunker struct {
 	initializeWriter InitializeWriterFunc
 
 	// State
-	chunks chan *Chunk
+	chunks  chan *Chunk
+	emitted bool
 
 	// Per-chunk state
 	buf              *bytes.Buffer
@@ -75,6 +76,7 @@ func (chunker *Chunker) Write(b []byte) (int, error) {
 			UncompressedSize:   chunker.uncompressedSize,
 			UncompressedDigest: digest.NewDigest(digest.SHA256, chunker.uncompressedHash),
 		}
+		chunker.emitted = true
 
 		if err := chunker.resetPerChunkState(); err != nil {
 			return 0, err
@@ -108,8 +110,9 @@ func (chunker *Chunker) Close() error {
 		return err
 	}
 
-	// Only emit a chunk if we have some data available
-	if chunker.buf.Len() != 0 {
+	// Only emit a last chunk if we have some data available
+	// or there were no chunks emitted before
+	if chunker.buf.Len() != 0 || !chunker.emitted {
 		chunker.chunks <- &Chunk{
 			Data:               chunker.buf.Bytes(),
 			UncompressedSize:   chunker.uncompressedSize,
