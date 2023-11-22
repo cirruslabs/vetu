@@ -27,9 +27,10 @@ func TestSimple(t *testing.T) {
 		})
 	}
 
-	chunker := chunkerpkg.NewChunker(chunkSize, func(w io.Writer) (io.WriteCloser, error) {
+	chunker, err := chunkerpkg.NewChunker(chunkSize, func(w io.Writer) (io.WriteCloser, error) {
 		return WriteNopCloser(w), nil
 	})
+	require.NoError(t, err)
 
 	go func() {
 		defer chunker.Close()

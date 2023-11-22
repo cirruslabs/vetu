@@ -203,9 +203,12 @@ func pushDisk(
 		return []types.Descriptor{}, err
 	}
 
-	chunker := chunkerpkg.NewChunker(targetDiskLayerSizeBytes, func(w io.Writer) (io.WriteCloser, error) {
+	chunker, err := chunkerpkg.NewChunker(targetDiskLayerSizeBytes, func(w io.Writer) (io.WriteCloser, error) {
 		return lz4.NewWriter(w), nil
 	})
+	if err != nil {
+		return []types.Descriptor{}, err
+	}
 
 	errCh := make(chan error, 1)
 
