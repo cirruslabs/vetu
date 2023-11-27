@@ -2,26 +2,68 @@ package temporary
 
 import (
 	"github.com/cirruslabs/vetu/internal/homedir"
+	"github.com/cirruslabs/vetu/internal/sparseio"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/google/uuid"
-	cp "github.com/otiai10/copy"
 	"os"
 	"path/filepath"
 )
 
-func AtomicallyCopyThrough(src string, dest string) error {
+func AtomicallyCopyThrough(srcDir string, dstDir string) error {
 	baseDir, err := initialize()
 	if err != nil {
 		return err
 	}
 
-	copyThroughPath := filepath.Join(baseDir, uuid.NewString())
+	// Create an intermediate directory that we'll later
+	// os.Rename() into dstDir to achieve the atomicity
+	intermediateDir := filepath.Join(baseDir, uuid.NewString())
 
-	if err := cp.Copy(src, copyThroughPath); err != nil {
+	if err := os.Mkdir(intermediateDir, 0755); err != nil {
 		return err
 	}
 
-	return os.Rename(copyThroughPath, dest)
+	// Copy the files from the source directory
+	// to the intermediate directory
+	dirEntries, err := os.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+
+	for _, dirEntry := range dirEntries {
+		srcFile, err := os.Open(filepath.Join(srcDir, dirEntry.Name()))
+		if err != nil {
+			return err
+		}
+
+		srcFileInfo, err := srcFile.Stat()
+		if err != nil {
+			return err
+		}
+
+		dstFile, err := os.Create(filepath.Join(intermediateDir, dirEntry.Name()))
+		if err != nil {
+			return err
+		}
+
+		if err := dstFile.Truncate(srcFileInfo.Size()); err != nil {
+			return err
+		}
+
+		if err := sparseio.Copy(dstFile, srcFile); err != nil {
+			return err
+		}
+
+		if err := srcFile.Close(); err != nil {
+			return err
+		}
+
+		if err := dstFile.Close(); err != nil {
+			return err
+		}
+	}
+
+	return os.Rename(intermediateDir, dstDir)
 }
 
 func Create() (*vmdirectory.VMDirectory, error) {
