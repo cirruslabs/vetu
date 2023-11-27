@@ -12,6 +12,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var concurrency uint8
+var insecure bool
+
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "clone NAME LOCAL_NAME",
@@ -19,6 +22,11 @@ func NewCommand() *cobra.Command {
 		RunE:  runClone,
 		Args:  cobra.ExactArgs(2),
 	}
+
+	cmd.Flags().Uint8Var(&concurrency, "concurrency", 4,
+		"network concurrency to use when pulling a remote VM from the OCI-compatible registry")
+	cmd.Flags().BoolVar(&insecure, "insecure", false,
+		"connect to the OCI registry via insecure HTTP protocol")
 
 	return cmd
 }
@@ -44,6 +52,12 @@ func runClone(cmd *cobra.Command, args []string) error {
 	case localname.LocalName:
 		srcVMDir, err = local.Open(typedSrcName)
 	case remotename.RemoteName:
+		if !remote.Exists(typedSrcName) {
+			if err := remote.Pull(cmd.Context(), typedSrcName, insecure, int(concurrency)); err != nil {
+				return err
+			}
+		}
+
 		srcVMDir, err = remote.Open(typedSrcName)
 	}
 	if err != nil {
