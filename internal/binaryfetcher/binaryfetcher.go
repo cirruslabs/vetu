@@ -10,7 +10,38 @@ import (
 	"path/filepath"
 )
 
+type FetchFunc func(binaryFile io.Writer) error
+
 func Fetch(ctx context.Context, downloadURL string, binaryName string, executable bool) (string, error) {
+	return FetchBy(ctx, func(binaryFile io.Writer) error {
+		// Download and cache the binary if not available in the cache
+		client := http.Client{}
+
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+		if err != nil {
+			return err
+		}
+
+		resp, err := client.Do(request)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("failed to fetch %q binary from %s: HTTP %d",
+				binaryName, downloadURL, resp.StatusCode)
+		}
+
+		if _, err := io.Copy(binaryFile, resp.Body); err != nil {
+			return err
+		}
+
+		return nil
+	}, binaryName, executable)
+}
+
+func FetchBy(ctx context.Context, fetchFunc FetchFunc, binaryName string, executable bool) (string, error) {
 	// Determine the binary path
 	binaryPath, err := binaryPath(binaryName)
 	if err != nil {
@@ -22,32 +53,15 @@ func Fetch(ctx context.Context, downloadURL string, binaryName string, executabl
 		return binaryPath, nil
 	}
 
-	// Download and cache the binary if not available in the cache
-	client := http.Client{}
-
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
-	if err != nil {
-		return "", err
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to fetch %q binary from %s: HTTP %d",
-			binaryName, downloadURL, resp.StatusCode)
-	}
-
+	// Run the user-provided function to fetch the binary file
+	// if not available in the cache
 	binaryFile, err := os.Create(binaryPath)
 	if err != nil {
 		return "", err
 	}
 	defer binaryFile.Close()
 
-	if _, err := io.Copy(binaryFile, resp.Body); err != nil {
+	if err := fetchFunc(binaryFile); err != nil {
 		return "", err
 	}
 
