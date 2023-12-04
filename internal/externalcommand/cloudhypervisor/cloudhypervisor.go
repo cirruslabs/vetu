@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/binaryfetcher"
+	"github.com/cirruslabs/vetu/internal/externalbinary/firmware"
+	"io"
 	"os/exec"
 	"runtime"
 )
@@ -31,7 +33,19 @@ func CloudHypervisor(ctx context.Context, args ...string) (*exec.Cmd, error) {
 
 		fmt.Printf("no %q binary found in PATH, downloading it from %s...\n", binaryName, downloadURL)
 
-		binaryPath, err = binaryfetcher.Fetch(ctx, downloadURL, binaryName, true)
+		binaryPath, err = binaryfetcher.Fetch(ctx, func(ctx context.Context, binaryFile io.Writer) error {
+			// Download the Cloud Hypervisor binary if not available in the cache
+			resp, err := firmware.FetchURL(ctx, downloadURL)
+			if err != nil {
+				return err
+			}
+
+			if _, err := io.Copy(binaryFile, resp.Body); err != nil {
+				return err
+			}
+
+			return nil
+		}, binaryName, true)
 		if err != nil {
 			return nil, err
 		}

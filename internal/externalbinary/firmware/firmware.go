@@ -35,7 +35,7 @@ func Firmware(ctx context.Context) (string, string, error) {
 	fmt.Printf("no EDK2 firmware installed on the system, downloading it from %s...\n",
 		debRepositoryURL)
 
-	binaryPath, err := binaryfetcher.FetchBy(ctx, func(binaryFile io.Writer) error {
+	binaryPath, err := binaryfetcher.Fetch(ctx, func(ctx context.Context, binaryFile io.Writer) error {
 		// Fetch the Packages file to determine the appropriate .deb
 		// that'll run on runtime.GOARCH
 		debURL, err := determineDebURL(ctx)
@@ -55,7 +55,7 @@ func Firmware(ctx context.Context) (string, string, error) {
 
 func determineDebURL(ctx context.Context) (string, error) {
 	// Fetch the Packages file and parse it
-	resp, err := fetch(ctx, debRepositoryURL+"/Packages")
+	resp, err := FetchURL(ctx, debRepositoryURL+"/Packages")
 	if err != nil {
 		return "", err
 	}
@@ -80,7 +80,7 @@ func determineDebURL(ctx context.Context) (string, error) {
 
 func downloadAndExtractDeb(ctx context.Context, debURL string, binaryFile io.Writer) error {
 	// Fetch the .deb package and parse it
-	debPath, err := fetchToFile(ctx, debURL)
+	debPath, err := FetchURLToFile(ctx, debURL)
 	if err != nil {
 		return err
 	}
@@ -114,8 +114,8 @@ func downloadAndExtractDeb(ctx context.Context, debURL string, binaryFile io.Wri
 	}
 }
 
-func fetchToFile(ctx context.Context, url string) (string, error) {
-	resp, err := fetch(ctx, url)
+func FetchURLToFile(ctx context.Context, url string) (string, error) {
+	resp, err := FetchURL(ctx, url)
 	if err != nil {
 		return "", err
 	}
@@ -133,7 +133,7 @@ func fetchToFile(ctx context.Context, url string) (string, error) {
 	return tempFile.Name(), tempFile.Close()
 }
 
-func fetch(ctx context.Context, url string) (*http.Response, error) {
+func FetchURL(ctx context.Context, url string) (*http.Response, error) {
 	client := http.Client{}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
