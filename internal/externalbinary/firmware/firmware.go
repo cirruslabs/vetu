@@ -141,5 +141,14 @@ func fetch(ctx context.Context, url string) (*http.Response, error) {
 		return nil, err
 	}
 
-	return client.Do(request)
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch %s: HTTP %d", url, resp.StatusCode)
+	}
+
+	return resp, nil
 }
