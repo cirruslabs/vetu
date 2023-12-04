@@ -34,7 +34,7 @@ func Firmware(ctx context.Context) (string, string, error) {
 	fmt.Printf("no EDK2 firmware installed on the system, downloading it from %s...\n",
 		debRepositoryURL)
 
-	binaryPath, err := binaryfetcher.Fetch(ctx, func(ctx context.Context, binaryFile io.Writer) error {
+	binaryPath, err := binaryfetcher.GetOrFetch(ctx, func(ctx context.Context, binaryFile io.Writer) error {
 		// Fetch the Packages file to determine the appropriate .deb
 		// that'll run on runtime.GOARCH
 		debURL, err := determineDebURL(ctx)

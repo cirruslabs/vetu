@@ -10,7 +10,7 @@ import (
 
 type FetchFunc func(ctx context.Context, binaryFile io.Writer) error
 
-func Fetch(ctx context.Context, fetchFunc FetchFunc, binaryName string, executable bool) (string, error) {
+func GetOrFetch(ctx context.Context, fetchFunc FetchFunc, binaryName string, executable bool) (string, error) {
 	// Determine the binary path
 	binaryPath, err := binaryPath(binaryName)
 	if err != nil {

@@ -32,7 +32,7 @@ func CloudHypervisor(ctx context.Context, args ...string) (*exec.Cmd, error) {
 
 		fmt.Printf("no %q binary found in PATH, downloading it from %s...\n", binaryName, downloadURL)
 
-		binaryPath, err = binaryfetcher.Fetch(ctx, func(ctx context.Context, binaryFile io.Writer) error {
+		binaryPath, err = binaryfetcher.GetOrFetch(ctx, func(ctx context.Context, binaryFile io.Writer) error {
 			// Download the Cloud Hypervisor binary if not available in the cache
 			resp, err := binaryfetcher.FetchURL(ctx, downloadURL)
 			if err != nil {
