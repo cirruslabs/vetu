@@ -8,7 +8,6 @@ import (
 	"github.com/cirruslabs/vetu/internal/binaryfetcher"
 	"github.com/samber/lo"
 	"io"
-	"net/http"
 	"os"
 	"path"
 	"pault.ag/go/debian/control"
@@ -55,7 +54,7 @@ func Firmware(ctx context.Context) (string, string, error) {
 
 func determineDebURL(ctx context.Context) (string, error) {
 	// Fetch the Packages file and parse it
-	resp, err := FetchURL(ctx, debRepositoryURL+"/Packages")
+	resp, err := binaryfetcher.FetchURL(ctx, debRepositoryURL+"/Packages")
 	if err != nil {
 		return "", err
 	}
@@ -80,7 +79,7 @@ func determineDebURL(ctx context.Context) (string, error) {
 
 func downloadAndExtractDeb(ctx context.Context, debURL string, binaryFile io.Writer) error {
 	// Fetch the .deb package and parse it
-	debPath, err := FetchURLToFile(ctx, debURL)
+	debPath, err := binaryfetcher.FetchURLToFile(ctx, debURL)
 	if err != nil {
 		return err
 	}
@@ -112,43 +111,4 @@ func downloadAndExtractDeb(ctx context.Context, debURL string, binaryFile io.Wri
 			return err
 		}
 	}
-}
-
-func FetchURLToFile(ctx context.Context, url string) (string, error) {
-	resp, err := FetchURL(ctx, url)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	tempFile, err := os.CreateTemp("", "")
-	if err != nil {
-		return "", err
-	}
-
-	if _, err := io.Copy(tempFile, resp.Body); err != nil {
-		return "", err
-	}
-
-	return tempFile.Name(), tempFile.Close()
-}
-
-func FetchURL(ctx context.Context, url string) (*http.Response, error) {
-	client := http.Client{}
-
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch %s: HTTP %d", url, resp.StatusCode)
-	}
-
-	return resp, nil
 }
