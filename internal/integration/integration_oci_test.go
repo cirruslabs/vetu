@@ -38,7 +38,7 @@ func TestPushPull(t *testing.T) {
 
 	// Create a dummy disk file that we'll use for creating a VM
 	diskPath := filepath.Join(tempDir, "disk.img")
-	fillFileWithRandomBytes(t, diskPath, 1*humanize.GByte)
+	fillFileWithRandomBytes(t, diskPath, 256*humanize.MByte)
 
 	// Create a VM
 	vmName := fmt.Sprintf("integration-test-push-pull-%s", uuid.NewString())
