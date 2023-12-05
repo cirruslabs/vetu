@@ -59,7 +59,8 @@ func runIP(cmd *cobra.Command, args []string) error {
 		waitCtx, waitCtxCancel := context.WithTimeout(cmd.Context(), time.Duration(wait)*time.Second)
 		defer waitCtxCancel()
 
-		retryOpts = append(retryOpts, retry.Context(waitCtx), retry.Attempts(0))
+		retryOpts = append(retryOpts, retry.Context(waitCtx), retry.Attempts(0),
+			retry.Delay(time.Second), retry.DelayType(retry.FixedDelay))
 	}
 
 	err = retry.Do(func() error {
