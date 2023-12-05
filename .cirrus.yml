@@ -19,7 +19,7 @@ task:
     architecture: arm64
     region: us-east-2
     type: a1.metal
-  install_docker:
+  install_docker_script:
     - sudo snap install docker
   test_script:
     - wget --no-verbose -O - https://go.dev/dl/go1.21.4.linux-arm64.tar.gz | tar -C /usr/local -xz
