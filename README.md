@@ -48,7 +48,16 @@ However, this choice is still fast enough to run most of the tasks, for example,
 
 Bridged networking can be enabling by specifying `--net-bridged=BRIDGE_INTERFACE_NAME` argument to `vetu run` and has an advantage of being fast, because all the processing and routing is done in the kernel.
 
-The main disadvantage is that this choice requires the system administrator to properly configure the bridge interface, IP forwarding, DHCP server (if required by the VM) and the packet filter to provide adequate network isolation.
+The main disadvantage is that this choice requires the system administrator to properly configure the bridge interface, IP forwarding and NAT, DHCP server (if required by the VM) and the packet filter to provide adequate network isolation.
+
+### Host
+
+Host networking can be enabled by specifying `--net-host` argument to `vetu run` and has the following advantages:
+
+* it is fast, because all the processing and routing is done in the kernel
+* no DHCP server is required: Vetu will assign the first available /30 subnet from the private IPv4 address space (excluding parts of that address space already used on the host machine)
+
+The main disadvantage is that this choice requires the system administrator to properly configure the IP forwarding and NAT and the packet filter to provide adequate network isolation.
 
 ## FAQ
 

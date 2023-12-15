@@ -7,6 +7,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/network"
 	"github.com/cirruslabs/vetu/internal/network/bridged"
+	"github.com/cirruslabs/vetu/internal/network/host"
 	"github.com/cirruslabs/vetu/internal/network/software"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
@@ -19,6 +20,7 @@ import (
 )
 
 var netBridged string
+var netHost bool
 
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -30,6 +32,9 @@ func NewCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&netBridged, "net-bridged", "", "specify a bridge interface "+
 		"to attach the VM to instead of using the software TCP/IP stack by default")
+	cmd.Flags().BoolVar(&netHost, "net-host", false, "use host-networking "+
+		"(assigns the first available /30 subnet from the private IPv4 address space to the "+
+		"\"vetu*\" interface and serves it using the built-in DHCP server to the VM)")
 
 	return cmd
 }
@@ -74,6 +79,8 @@ func runRun(cmd *cobra.Command, args []string) error {
 	switch {
 	case netBridged != "":
 		network, err = bridged.New(netBridged)
+	case netHost:
+		network, err = host.New(vmConfig.MACAddress.HardwareAddr)
 	default:
 		network, err = software.New(vmConfig.MACAddress.HardwareAddr)
 	}
