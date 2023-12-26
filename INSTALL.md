@@ -62,7 +62,7 @@ Check the [releases page](https://github.com/cirruslabs/vetu/releases) for a pre
 Here's a one-liner for Linux to download the latest release:
 
 ```bash
-curl -L -o vetu https://github.com/cirruslabs/vetu/releases/latest/download/vetu-linux-$(uname -m) && sudo mv vetu /usr/bin/vetu && sudo chmod +x /usr/bin/vetu && sudo setcap cap_net_raw,cap_net_admin+eip /usr/bin/vetu
+curl -L -o vetu https://github.com/cirruslabs/vetu/releases/latest/download/vetu-linux-$(uname -m) && sudo mv vetu /usr/bin/vetu && sudo chmod +x /usr/bin/vetu && sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/vetu
 ```
 
 ## From Source
@@ -78,7 +78,7 @@ This will build and place the `vetu` binary in `$GOPATH/bin`.
 Vetu binary also needs some capabilities assigned to it:
 
 ```shell
-sudo setcap cap_net_raw,cap_net_admin+eip $GOPATH/bin/vetu
+sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $GOPATH/bin/vetu
 ```
 
 To be able to run `vetu` command from anywhere, make sure the `$GOPATH/bin` directory is added to your `PATH`

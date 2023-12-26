@@ -9,6 +9,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/afpacket"
 	"github.com/cirruslabs/vetu/internal/network/software/dhcp"
 	"github.com/cirruslabs/vetu/internal/network/software/gvisor"
+	"github.com/cirruslabs/vetu/internal/network/subnetfinder"
 	"github.com/cirruslabs/vetu/internal/tuntap"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -44,7 +45,7 @@ func New(vmHardwareAddr net.HardwareAddr) (*Network, error) {
 	}
 
 	// Find an available subnet to use
-	gatewayIP, vmIP, hostIP, network, err := FindAvailableSubnet(29)
+	gatewayIP, vmIP, hostIP, network, err := subnetfinder.FindAvailableSubnet(29)
 	if err != nil {
 		return nil, err
 	}

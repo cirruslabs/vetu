@@ -1,4 +1,4 @@
-package software
+package subnetfinder
 
 import (
 	"fmt"
