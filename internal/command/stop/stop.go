@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/avast/retry-go/v4"
-	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
+	"github.com/cirruslabs/vetu/internal/pidlock"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
@@ -43,7 +43,7 @@ func runStop(cmd *cobra.Command, args []string) error {
 	}
 
 	// Find the PID of the "vetu run" process running this VM
-	lock, err := filelock.New(vmDir.ConfigPath())
+	lock, err := pidlock.New(vmDir.ConfigPath())
 	if err != nil {
 		return err
 	}

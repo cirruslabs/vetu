@@ -1,9 +1,9 @@
-package filelock_test
+package pidlock_test
 
 import (
 	"errors"
 	"fmt"
-	"github.com/cirruslabs/vetu/internal/filelock"
+	"github.com/cirruslabs/vetu/internal/pidlock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sys/unix"
@@ -34,7 +34,7 @@ func TestTrylock(t *testing.T) {
 	lockPath := touch(t)
 
 	// Acquire a lock
-	holderLock, err := filelock.New(lockPath)
+	holderLock, err := pidlock.New(lockPath)
 	require.NoError(t, err)
 	require.NoError(t, holderLock.Trylock())
 
@@ -47,7 +47,7 @@ func TestPid(t *testing.T) {
 	lockPath := touch(t)
 
 	// Acquire a lock
-	holderLock, err := filelock.New(lockPath)
+	holderLock, err := pidlock.New(lockPath)
 	require.NoError(t, err)
 	require.NoError(t, holderLock.Lock())
 
@@ -57,20 +57,20 @@ func TestPid(t *testing.T) {
 
 func testHelperTrylock(lockPath string) {
 	// Try to acquire a lock
-	lock, err := filelock.New(lockPath)
+	lock, err := pidlock.New(lockPath)
 	if err != nil {
 		panic(err)
 	}
 
 	err = lock.Trylock()
-	if !errors.Is(err, filelock.ErrAlreadyLocked) {
+	if !errors.Is(err, pidlock.ErrAlreadyLocked) {
 		log.Panicf("expected a filelock.ErrAlreadyLocked error, got %v", err)
 	}
 }
 
 func testHelperPid(lockPath string) {
 	// Retrieve the lock file's attached PID
-	lock, err := filelock.New(lockPath)
+	lock, err := pidlock.New(lockPath)
 	if err != nil {
 		panic(err)
 	}

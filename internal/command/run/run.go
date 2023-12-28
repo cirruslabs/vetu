@@ -3,12 +3,12 @@ package run
 import (
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/externalcommand/cloudhypervisor"
-	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/network"
 	"github.com/cirruslabs/vetu/internal/network/bridged"
 	"github.com/cirruslabs/vetu/internal/network/host"
 	"github.com/cirruslabs/vetu/internal/network/software"
+	"github.com/cirruslabs/vetu/internal/pidlock"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/samber/lo"
@@ -59,7 +59,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	//
 	//nolint:lll
 	// [1]: https://github.com/cirruslabs/tart/blob/8c011623be2ed8254cd91b15c336c2fff2b6f9be/Sources/tart/Commands/Run.swift#L209-L220
-	lock, err := filelock.New(vmDir.ConfigPath())
+	lock, err := pidlock.New(vmDir.ConfigPath())
 	if err != nil {
 		return err
 	}

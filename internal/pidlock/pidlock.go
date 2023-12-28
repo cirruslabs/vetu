@@ -1,4 +1,4 @@
-package filelock
+package pidlock
 
 import (
 	"errors"

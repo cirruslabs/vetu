@@ -3,7 +3,7 @@ package vmdirectory
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cirruslabs/vetu/internal/filelock"
+	"github.com/cirruslabs/vetu/internal/pidlock"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"io/fs"
 	"os"
@@ -79,7 +79,7 @@ func (vmDir *VMDirectory) Size() (uint64, error) {
 }
 
 func (vmDir *VMDirectory) Running() bool {
-	lock, err := filelock.New(vmDir.ConfigPath())
+	lock, err := pidlock.New(vmDir.ConfigPath())
 	if err != nil {
 		return false
 	}
