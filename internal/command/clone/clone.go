@@ -5,6 +5,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/name"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
+	"github.com/cirruslabs/vetu/internal/randommac"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/storage/remote"
 	"github.com/cirruslabs/vetu/internal/storage/temporary"
@@ -75,5 +76,19 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return temporary.AtomicallyCopyThrough(srcVMDir.Path(), dstPath)
+	return temporary.AtomicallyCopyThrough(srcVMDir.Path(), dstPath, func(vmDir *vmdirectory.VMDirectory) error {
+		vmConfig, err := vmDir.Config()
+		if err != nil {
+			return err
+		}
+
+		// Generate a random MAC-address
+		randomMAC, err := randommac.UnicastAndLocallyAdministered()
+		if err != nil {
+			return err
+		}
+		vmConfig.MACAddress.HardwareAddr = randomMAC
+
+		return vmDir.SetConfig(vmConfig)
+	})
 }

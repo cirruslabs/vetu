@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 )
 
-func AtomicallyCopyThrough(srcDir string, dstDir string) error {
+type Hook func(vmDir *vmdirectory.VMDirectory) error
+
+func AtomicallyCopyThrough(srcDir string, dstDir string, hooks ...Hook) error {
 	baseDir, err := initialize()
 	if err != nil {
 		return err
@@ -59,6 +61,17 @@ func AtomicallyCopyThrough(srcDir string, dstDir string) error {
 		}
 
 		if err := dstFile.Close(); err != nil {
+			return err
+		}
+	}
+
+	vmDir, err := vmdirectory.Load(intermediateDir)
+	if err != nil {
+		return err
+	}
+
+	for _, hook := range hooks {
+		if err := hook(vmDir); err != nil {
 			return err
 		}
 	}
