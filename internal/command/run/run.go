@@ -53,7 +53,10 @@ func runRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	vmConfig := vmDir.Config()
+	vmConfig, err := vmDir.Config()
+	if err != nil {
+		return err
+	}
 
 	// Acquire a lock after reading the config[1]
 	//

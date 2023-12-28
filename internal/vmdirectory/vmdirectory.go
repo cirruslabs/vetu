@@ -11,8 +11,7 @@ import (
 )
 
 type VMDirectory struct {
-	baseDir  string
-	vmConfig vmconfig.VMConfig
+	baseDir string
 }
 
 type State string
@@ -37,15 +36,6 @@ func Initialize(path string) (*VMDirectory, error) {
 func Load(path string) (*VMDirectory, error) {
 	vmDir := &VMDirectory{
 		baseDir: path,
-	}
-
-	vmConfigJSONBytes, err := os.ReadFile(vmDir.ConfigPath())
-	if err != nil {
-		return nil, fmt.Errorf("failed to read VM's config: %v", err)
-	}
-
-	if err := json.Unmarshal(vmConfigJSONBytes, &vmDir.vmConfig); err != nil {
-		return nil, fmt.Errorf("failed to parse VM's config: %v", err)
 	}
 
 	return vmDir, nil
@@ -112,21 +102,29 @@ func (vmDir *VMDirectory) InitramfsPath() string {
 	return filepath.Join(vmDir.baseDir, "initramfs")
 }
 
-func (vmDir *VMDirectory) Config() vmconfig.VMConfig {
-	return vmDir.vmConfig
+func (vmDir *VMDirectory) Config() (*vmconfig.VMConfig, error) {
+	vmConfigBytes, err := os.ReadFile(vmDir.ConfigPath())
+	if err != nil {
+		return nil, fmt.Errorf("failed to read VM's config: %v", err)
+	}
+
+	vmConfig, err := vmconfig.NewFromJSON(vmConfigBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse VM's config: %v", err)
+	}
+
+	return vmConfig, nil
 }
 
 func (vmDir *VMDirectory) SetConfig(vmConfig *vmconfig.VMConfig) error {
 	vmConfigJSONBytes, err := json.Marshal(vmConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to serialize VM's config: %v", err)
 	}
 
 	if err := os.WriteFile(vmDir.ConfigPath(), vmConfigJSONBytes, 0600); err != nil {
-		return err
+		return fmt.Errorf("failed to write VM's config: %v", err)
 	}
-
-	vmDir.vmConfig = *vmConfig
 
 	return nil
 }

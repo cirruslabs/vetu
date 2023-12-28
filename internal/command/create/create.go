@@ -60,7 +60,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	vmConfig := vmDir.Config()
+	vmConfig := vmconfig.New()
 
 	// Kernel
 	if kernel != "" {
@@ -107,7 +107,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 	vmConfig.MACAddress.HardwareAddr = randomMAC
 
-	if err := vmDir.SetConfig(&vmConfig); err != nil {
+	if err := vmDir.SetConfig(vmConfig); err != nil {
 		return err
 	}
 

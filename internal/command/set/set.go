@@ -49,7 +49,10 @@ func runSet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	vmConfig := vmDir.Config()
+	vmConfig, err := vmDir.Config()
+	if err != nil {
+		return err
+	}
 
 	if cpu != 0 {
 		vmConfig.CPUCount = cpu
@@ -65,10 +68,10 @@ func runSet(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	return vmDir.SetConfig(&vmConfig)
+	return vmDir.SetConfig(vmConfig)
 }
 
-func resizeDisk(vmDir *vmdirectory.VMDirectory, vmConfig vmconfig.VMConfig) error {
+func resizeDisk(vmDir *vmdirectory.VMDirectory, vmConfig *vmconfig.VMConfig) error {
 	if len(vmConfig.Disks) < 1 {
 		return fmt.Errorf("%w: VM has no disks", ErrSet)
 	}

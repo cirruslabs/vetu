@@ -45,7 +45,12 @@ func runIP(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	hardwareAddr := vmDir.Config().MACAddress.HardwareAddr
+	vmConfig, err := vmDir.Config()
+	if err != nil {
+		return err
+	}
+
+	hardwareAddr := vmConfig.MACAddress.HardwareAddr
 
 	retryOpts := []retry.Option{
 		retry.DelayType(retry.FixedDelay),
