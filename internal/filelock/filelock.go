@@ -13,7 +13,7 @@ type FileLock struct {
 }
 
 func New(path string) (*FileLock, error) {
-	fd, err := unix.Open(path, unix.O_RDWR, 0)
+	fd, err := unix.Open(path, unix.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
 	}
