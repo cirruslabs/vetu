@@ -59,6 +59,13 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	lock, err := vmDir.FileLock()
+	if err != nil {
+		return err
+	}
+	if err := lock.Trylock(); err != nil {
+		return err
+	}
 
 	vmConfig := vmconfig.New()
 

@@ -1,6 +1,8 @@
 package temporary
 
 import (
+	"errors"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/homedir"
 	"github.com/cirruslabs/vetu/internal/sparseio"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
@@ -22,6 +24,14 @@ func AtomicallyCopyThrough(srcDir string, dstDir string, hooks ...Hook) error {
 	intermediateDir := filepath.Join(baseDir, uuid.NewString())
 
 	if err := os.Mkdir(intermediateDir, 0755); err != nil {
+		return err
+	}
+
+	lock, err := filelock.New(intermediateDir)
+	if err != nil {
+		return err
+	}
+	if err := lock.Trylock(); err != nil {
 		return err
 	}
 
@@ -92,6 +102,52 @@ func Create() (*vmdirectory.VMDirectory, error) {
 	}
 
 	return vmdirectory.Initialize(vmDirPath)
+}
+
+func GC() error {
+	baseDir, err := initialize()
+	if err != nil {
+		return err
+	}
+
+	dirEntries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return err
+	}
+
+	for _, dirEntry := range dirEntries {
+		path := filepath.Join(baseDir, dirEntry.Name())
+
+		lock, err := filelock.New(path)
+		if err != nil {
+			// It's quite possible that while iterating and removing the temporary directories,
+			// some of the directories were already moved to their final destination, so ignore them
+			if os.IsNotExist(err) {
+				continue
+			}
+
+			return err
+		}
+
+		if err := lock.Trylock(); err != nil {
+			// Avoid garbage collection if this directory is in use
+			if errors.Is(err, filelock.ErrAlreadyLocked) {
+				continue
+			}
+
+			return err
+		}
+
+		if err := os.RemoveAll(path); err != nil {
+			return err
+		}
+
+		if err := lock.Unlock(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func initialize() (string, error) {

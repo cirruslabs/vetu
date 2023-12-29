@@ -23,6 +23,13 @@ func Pull(ctx context.Context, remoteName remotename.RemoteName, insecure bool, 
 	if err != nil {
 		return err
 	}
+	lock, err := vmDir.FileLock()
+	if err != nil {
+		return err
+	}
+	if err := lock.Trylock(); err != nil {
+		return err
+	}
 
 	// Load hosts from the Docker configuration file
 	hosts, err := dockerhosts.Load(reference, insecure)
