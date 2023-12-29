@@ -94,7 +94,7 @@ func addVMsToTable(table *uitable.Table, source string, list listFunc) error {
 			return err
 		}
 
-		table.AddRow(source, name, humanize.IBytes(size), vmDir.State())
+		table.AddRow(source, name, humanize.Bytes(size), vmDir.State())
 	}
 
 	return nil
