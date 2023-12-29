@@ -8,40 +8,40 @@ import (
 
 var ErrAlreadyLocked = errors.New("already locked")
 
-type FileLock struct {
+type PIDLock struct {
 	fd uintptr
 }
 
-func New(path string) (*FileLock, error) {
+func New(path string) (*PIDLock, error) {
 	fd, err := unix.Open(path, unix.O_RDWR, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	return &FileLock{
+	return &PIDLock{
 		fd: uintptr(fd),
 	}, nil
 }
 
-func (fl *FileLock) Trylock() error {
+func (fl *PIDLock) Trylock() error {
 	_, err := fl.lockWrapper(unix.F_SETLK, unix.F_WRLCK)
 
 	return err
 }
 
-func (fl *FileLock) Lock() error {
+func (fl *PIDLock) Lock() error {
 	_, err := fl.lockWrapper(unix.F_SETLKW, unix.F_WRLCK)
 
 	return err
 }
 
-func (fl *FileLock) Unlock() error {
+func (fl *PIDLock) Unlock() error {
 	_, err := fl.lockWrapper(unix.F_SETLK, unix.F_UNLCK)
 
 	return err
 }
 
-func (fl *FileLock) Pid() (int32, error) {
+func (fl *PIDLock) Pid() (int32, error) {
 	result, err := fl.lockWrapper(unix.F_GETLK, unix.F_RDLCK)
 	if err != nil {
 		return 0, err
@@ -49,11 +49,11 @@ func (fl *FileLock) Pid() (int32, error) {
 
 	return result.Pid, nil
 }
-func (fl *FileLock) Close() error {
+func (fl *PIDLock) Close() error {
 	return unix.Close(int(fl.fd))
 }
 
-func (fl *FileLock) lockWrapper(operation int, lockType int16) (*unix.Flock_t, error) {
+func (fl *PIDLock) lockWrapper(operation int, lockType int16) (*unix.Flock_t, error) {
 	result := &unix.Flock_t{
 		Type:   lockType,
 		Whence: unix.SEEK_SET,
