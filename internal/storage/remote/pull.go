@@ -30,6 +30,9 @@ func Pull(ctx context.Context, remoteName remotename.RemoteName, insecure bool, 
 	if err := lock.Trylock(); err != nil {
 		return err
 	}
+	defer func() {
+		_ = lock.Unlock()
+	}()
 
 	// Load hosts from the Docker configuration file
 	hosts, err := dockerhosts.Load(reference, insecure)
