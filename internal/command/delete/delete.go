@@ -2,7 +2,6 @@
 package delete
 
 import (
-	"fmt"
 	"github.com/cirruslabs/vetu/internal/globallock"
 	namepkg "github.com/cirruslabs/vetu/internal/name"
 	"github.com/cirruslabs/vetu/internal/name/localname"
@@ -10,6 +9,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/storage/remote"
 	"github.com/spf13/cobra"
+	"log"
 )
 
 func NewCommand() *cobra.Command {
@@ -48,7 +48,7 @@ func runDelete(cmd *cobra.Command, args []string) error {
 			}
 
 			if err != nil {
-				fmt.Printf("failed to delete VM %q: %v\n", name, err)
+				log.Printf("failed to delete VM %q: %v", name, err)
 			}
 		}
 
