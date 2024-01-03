@@ -96,16 +96,16 @@ func runRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Initialize network
-	var network network.Network
-
-	switch {
-	case netBridged != "":
-		network, err = bridged.New(netBridged)
-	case netHost:
-		network, err = host.New(vmConfig.MACAddress.HardwareAddr)
-	default:
-		network, err = software.New(vmConfig.MACAddress.HardwareAddr)
-	}
+	network, err := globallock.With(func() (network.Network, error) {
+		switch {
+		case netBridged != "":
+			return bridged.New(netBridged)
+		case netHost:
+			return host.New(vmConfig.MACAddress.HardwareAddr)
+		default:
+			return software.New(vmConfig.MACAddress.HardwareAddr)
+		}
+	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize VM's network: %v", err)
 	}
