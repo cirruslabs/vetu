@@ -35,6 +35,9 @@ func Link(digestedRemoteName remotename.RemoteName, taggedRemoteName remotename.
 		return err
 	}
 
+	// Make sure that the old symbolic link does not exist (if any)
+	_ = os.Remove(newname)
+
 	return os.Symlink(oldname, newname)
 }
 
@@ -60,7 +63,12 @@ func MoveIn(name remotename.RemoteName, digest digest.Digest, vmDir *vmdirectory
 
 	// Symlink to the digest directory if tag is used
 	if name.Tag != "" {
-		return os.Symlink(concretePath, filepath.Join(basePath, name.Tag))
+		tagPath := filepath.Join(basePath, name.Tag)
+
+		// Make sure that the old symbolic link does not exist (if any)
+		_ = os.Remove(tagPath)
+
+		return os.Symlink(concretePath, tagPath)
 	}
 
 	return nil
