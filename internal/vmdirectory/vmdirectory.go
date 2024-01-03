@@ -46,6 +46,10 @@ func (vmDir *VMDirectory) FileLock() (*filelock.FileLock, error) {
 	return filelock.New(vmDir.Path())
 }
 
+func (vmDir *VMDirectory) PIDLock() (*pidlock.PIDLock, error) {
+	return pidlock.New(vmDir.ConfigPath())
+}
+
 func (vmDir *VMDirectory) Path() string {
 	return vmDir.baseDir
 }

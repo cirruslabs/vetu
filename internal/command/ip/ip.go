@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/avast/retry-go/v4"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/storage/local"
+	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/spf13/cobra"
 	"github.com/vishvananda/netlink"
 	"net"
@@ -40,12 +42,15 @@ func runIP(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	vmDir, err := local.Open(localName)
-	if err != nil {
-		return err
-	}
+	// Open the VM directory and read its configuration under a global lock
+	vmConfig, err := globallock.With(func() (*vmconfig.VMConfig, error) {
+		vmDir, err := local.Open(localName)
+		if err != nil {
+			return nil, err
+		}
 
-	vmConfig, err := vmDir.Config()
+		return vmDir.Config()
+	})
 	if err != nil {
 		return err
 	}

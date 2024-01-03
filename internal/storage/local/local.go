@@ -79,12 +79,28 @@ func Delete(name localname.LocalName) error {
 		return err
 	}
 
-	_, err = os.Stat(path)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("cannot remove VM %s as it doesn't exist", name.String())
+	vmDir, err := Open(name)
+	if err != nil {
+		return fmt.Errorf("cannot remove VM %s: %v", name.String(), err)
 	}
 
-	return os.RemoveAll(path)
+	lock, err := vmDir.FileLock()
+	if err != nil {
+		return fmt.Errorf("cannot remove VM %s: %v", name.String(), err)
+	}
+
+	if err := lock.Trylock(); err != nil {
+		return fmt.Errorf("cannot remove VM %s: %v", name.String(), err)
+	}
+	defer func() {
+		_ = lock.Unlock()
+	}()
+
+	if err := os.RemoveAll(path); err != nil {
+		return fmt.Errorf("cannot remove VM %s: %v", name.String(), err)
+	}
+
+	return nil
 }
 
 func PathFor(name localname.LocalName) (string, error) {

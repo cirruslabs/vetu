@@ -2,6 +2,7 @@ package clone
 
 import (
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
@@ -46,21 +47,39 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Open the source VM directory
-	var srcVMDir *vmdirectory.VMDirectory
+	// Check if we need to pull anything
+	remoteName, ok := srcName.(remotename.RemoteName)
+	if ok && !remote.Exists(remoteName) {
+		if err := remote.Pull(cmd.Context(), remoteName, insecure, int(concurrency)); err != nil {
+			return err
+		}
+	}
 
-	switch typedSrcName := srcName.(type) {
-	case localname.LocalName:
-		srcVMDir, err = local.Open(typedSrcName)
-	case remotename.RemoteName:
-		if !remote.Exists(typedSrcName) {
-			if err := remote.Pull(cmd.Context(), typedSrcName, insecure, int(concurrency)); err != nil {
-				return err
-			}
+	// Open and lock the source VM directory under a global lock
+	srcVMDir, err := globallock.With(func() (*vmdirectory.VMDirectory, error) {
+		var srcVMDir *vmdirectory.VMDirectory
+
+		switch typedSrcName := srcName.(type) {
+		case localname.LocalName:
+			srcVMDir, err = local.Open(typedSrcName)
+		case remotename.RemoteName:
+			srcVMDir, err = remote.Open(typedSrcName)
+		}
+		if err != nil {
+			return nil, err
 		}
 
-		srcVMDir, err = remote.Open(typedSrcName)
-	}
+		lock, err := srcVMDir.FileLock()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := lock.Trylock(); err != nil {
+			return nil, err
+		}
+
+		return srcVMDir, nil
+	})
 	if err != nil {
 		return err
 	}
