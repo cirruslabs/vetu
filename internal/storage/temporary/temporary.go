@@ -5,6 +5,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/homedir"
 	"github.com/cirruslabs/vetu/internal/sparseio"
+	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/google/uuid"
 	"os"
@@ -101,7 +102,16 @@ func Create() (*vmdirectory.VMDirectory, error) {
 		return nil, err
 	}
 
-	return vmdirectory.Initialize(vmDirPath)
+	vmDir, err := vmdirectory.Load(vmDirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := vmDir.SetConfig(vmconfig.New()); err != nil {
+		return nil, err
+	}
+
+	return vmDir, nil
 }
 
 func GC() error {

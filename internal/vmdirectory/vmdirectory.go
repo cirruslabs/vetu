@@ -22,18 +22,6 @@ const (
 	StateRunning State = "running"
 )
 
-func Initialize(path string) (*VMDirectory, error) {
-	vmDir := &VMDirectory{
-		baseDir: path,
-	}
-
-	if err := vmDir.SetConfig(vmconfig.New()); err != nil {
-		return nil, err
-	}
-
-	return vmDir, nil
-}
-
 func Load(path string) (*VMDirectory, error) {
 	vmDir := &VMDirectory{
 		baseDir: path,
