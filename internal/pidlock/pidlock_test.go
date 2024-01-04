@@ -49,7 +49,7 @@ func TestPid(t *testing.T) {
 	// Acquire a lock
 	holderLock, err := pidlock.New(lockPath)
 	require.NoError(t, err)
-	require.NoError(t, holderLock.Lock())
+	require.NoError(t, holderLock.Trylock())
 
 	// Run helper process
 	runHelper(t, envTestHelperPid, lockPath)

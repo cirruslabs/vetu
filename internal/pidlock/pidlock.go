@@ -29,12 +29,6 @@ func (fl *PIDLock) Trylock() error {
 	return err
 }
 
-func (fl *PIDLock) Lock() error {
-	_, err := fl.lockWrapper(unix.F_SETLKW, unix.F_WRLCK)
-
-	return err
-}
-
 func (fl *PIDLock) Unlock() error {
 	_, err := fl.lockWrapper(unix.F_SETLK, unix.F_UNLCK)
 
