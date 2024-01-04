@@ -36,7 +36,7 @@ func runDelete(cmd *cobra.Command, args []string) error {
 	}
 
 	// Delete VMs under a global lock
-	_, err := globallock.With(func() (struct{}, error) {
+	_, err := globallock.With(cmd.Context(), func() (struct{}, error) {
 		var errs []error
 
 		for _, name := range names {

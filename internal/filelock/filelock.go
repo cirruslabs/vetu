@@ -1,9 +1,11 @@
 package filelock
 
 import (
+	"context"
 	"errors"
 	"golang.org/x/sys/unix"
 	"syscall"
+	"time"
 )
 
 var ErrAlreadyLocked = errors.New("already locked")
@@ -27,8 +29,19 @@ func (fl *FileLock) Trylock() error {
 	return fl.lockWrapper(unix.LOCK_EX | unix.LOCK_NB)
 }
 
-func (fl *FileLock) Lock() error {
-	return fl.lockWrapper(unix.LOCK_EX)
+func (fl *FileLock) Lock(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			if err := fl.Trylock(); !errors.Is(err, ErrAlreadyLocked) {
+				return err
+			}
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 func (fl *FileLock) Unlock() error {

@@ -43,7 +43,7 @@ func runIP(cmd *cobra.Command, args []string) error {
 	}
 
 	// Open the VM directory and read its configuration under a global lock
-	vmConfig, err := globallock.With(func() (*vmconfig.VMConfig, error) {
+	vmConfig, err := globallock.With(cmd.Context(), func() (*vmconfig.VMConfig, error) {
 		vmDir, err := local.Open(localName)
 		if err != nil {
 			return nil, err

@@ -71,7 +71,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	table.AddRow("Source", "Name", "Size", "State")
 
 	// Retrieve VMs metadata under a global lock
-	_, err := globallock.With(func() (struct{}, error) {
+	_, err := globallock.With(cmd.Context(), func() (struct{}, error) {
 		for source, list := range desiredSources {
 			if err := addVMsToTable(table, source, list); err != nil {
 				return struct{}{}, err

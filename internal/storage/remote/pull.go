@@ -47,7 +47,7 @@ func Pull(ctx context.Context, remoteName remotename.RemoteName, insecure bool, 
 		fmt.Printf("a pull for registry %s is already in-progress, "+
 			"waiting for the lock...\n", remoteName.Registry)
 
-		err = registryLock.Lock()
+		err = registryLock.Lock(ctx)
 	}
 	if err != nil {
 		return err

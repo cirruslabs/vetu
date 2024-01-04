@@ -39,7 +39,7 @@ func runStop(cmd *cobra.Command, args []string) error {
 
 	// Open VM's directory under a global lock and acquire a PIDLock on it
 	// (but do not lock the PIDLock as we'll only use it to query the PID)
-	lock, err := globallock.With(func() (*pidlock.PIDLock, error) {
+	lock, err := globallock.With(cmd.Context(), func() (*pidlock.PIDLock, error) {
 		vmDir, err := local.Open(localName)
 		if err != nil {
 			return nil, err

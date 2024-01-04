@@ -111,7 +111,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Move-in the created VM under a global lock
-	_, err = globallock.With(func() (struct{}, error) {
+	_, err = globallock.With(cmd.Context(), func() (struct{}, error) {
 		localName, err := localname.NewFromString(name)
 		if err != nil {
 			return struct{}{}, err

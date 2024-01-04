@@ -56,7 +56,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 	}
 
 	// Open and lock the source VM directory under a global lock
-	srcVMDir, err := globallock.With(func() (*vmdirectory.VMDirectory, error) {
+	srcVMDir, err := globallock.With(cmd.Context(), func() (*vmdirectory.VMDirectory, error) {
 		var srcVMDir *vmdirectory.VMDirectory
 
 		switch typedSrcName := srcName.(type) {

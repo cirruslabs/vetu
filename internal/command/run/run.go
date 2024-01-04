@@ -51,7 +51,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Open and lock VM directory (under a global lock) until the end of the "vetu run" execution
-	vmDir, err := globallock.With(func() (*vmdirectory.VMDirectory, error) {
+	vmDir, err := globallock.With(cmd.Context(), func() (*vmdirectory.VMDirectory, error) {
 		vmDir, err := local.Open(localName)
 		if err != nil {
 			return nil, err
@@ -96,7 +96,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Initialize network
-	network, err := globallock.With(func() (network.Network, error) {
+	network, err := globallock.With(cmd.Context(), func() (network.Network, error) {
 		switch {
 		case netBridged != "":
 			return bridged.New(netBridged)

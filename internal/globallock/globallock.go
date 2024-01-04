@@ -7,12 +7,13 @@
 package globallock
 
 import (
+	"context"
 	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/homedir"
 )
 
 // With runs the callback cb under a global lock.
-func With[T any](cb func() (T, error)) (T, error) {
+func With[T any](ctx context.Context, cb func() (T, error)) (T, error) {
 	var result T
 
 	homeDir, err := homedir.Path()
@@ -25,7 +26,7 @@ func With[T any](cb func() (T, error)) (T, error) {
 		return result, err
 	}
 
-	if err := lock.Lock(); err != nil {
+	if err := lock.Lock(ctx); err != nil {
 		return result, err
 	}
 

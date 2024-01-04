@@ -46,7 +46,7 @@ func runSet(cmd *cobra.Command, args []string) error {
 	}
 
 	// Open and lock VM directory (under a global lock) until the end of the "vetu set" execution
-	vmDir, err := globallock.With(func() (*vmdirectory.VMDirectory, error) {
+	vmDir, err := globallock.With(cmd.Context(), func() (*vmdirectory.VMDirectory, error) {
 		vmDir, err := local.Open(localName)
 		if err != nil {
 			return nil, err
