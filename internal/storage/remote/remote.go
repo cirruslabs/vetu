@@ -2,6 +2,7 @@ package remote
 
 import (
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/homedir"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
@@ -162,6 +163,21 @@ func Delete(name remotename.RemoteName) error {
 	}
 
 	return gc()
+}
+
+func RegistryLock(name remotename.RemoteName) (*filelock.FileLock, error) {
+	baseDir, err := initialize()
+	if err != nil {
+		return nil, err
+	}
+
+	registryDir := filepath.Join(baseDir, name.Registry)
+
+	if err := os.MkdirAll(registryDir, 0755); err != nil {
+		return nil, err
+	}
+
+	return filelock.New(registryDir)
 }
 
 func PathForResolved(name remotename.RemoteName) (string, error) {
