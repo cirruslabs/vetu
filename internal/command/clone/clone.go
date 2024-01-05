@@ -2,9 +2,11 @@ package clone
 
 import (
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
+	"github.com/cirruslabs/vetu/internal/randommac"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/storage/remote"
 	"github.com/cirruslabs/vetu/internal/storage/temporary"
@@ -45,35 +47,73 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Open the source VM directory
-	var srcVMDir *vmdirectory.VMDirectory
+	// Check if we need to pull anything
+	remoteName, ok := srcName.(remotename.RemoteName)
+	if ok && !remote.Exists(remoteName) {
+		if err := remote.Pull(cmd.Context(), remoteName, insecure, int(concurrency)); err != nil {
+			return err
+		}
+	}
 
-	switch typedSrcName := srcName.(type) {
-	case localname.LocalName:
-		srcVMDir, err = local.Open(typedSrcName)
-	case remotename.RemoteName:
-		if !remote.Exists(typedSrcName) {
-			if err := remote.Pull(cmd.Context(), typedSrcName, insecure, int(concurrency)); err != nil {
-				return err
-			}
+	// Open and lock the source VM directory under a global lock
+	srcVMDir, err := globallock.With(cmd.Context(), func() (*vmdirectory.VMDirectory, error) {
+		var srcVMDir *vmdirectory.VMDirectory
+
+		switch typedSrcName := srcName.(type) {
+		case localname.LocalName:
+			srcVMDir, err = local.Open(typedSrcName)
+		case remotename.RemoteName:
+			srcVMDir, err = remote.Open(typedSrcName)
+		}
+		if err != nil {
+			return nil, err
 		}
 
-		srcVMDir, err = remote.Open(typedSrcName)
-	}
+		lock, err := srcVMDir.FileLock()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := lock.Trylock(); err != nil {
+			return nil, err
+		}
+
+		return srcVMDir, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	// Ensure the target VM directory does not exist
-	if local.Exists(dstLocalName) {
-		return fmt.Errorf("VM %q already exists", dstLocalName)
-	}
-
-	// Retrieve a path for the target VM directory
-	dstPath, err := local.PathFor(dstLocalName)
+	tmpVMDir, err := temporary.CreateFrom(srcVMDir.Path())
 	if err != nil {
 		return err
 	}
 
-	return temporary.AtomicallyCopyThrough(srcVMDir.Path(), dstPath)
+	// Generate and set a random MAC-address
+	vmConfig, err := tmpVMDir.Config()
+	if err != nil {
+		return err
+	}
+	vmConfig.MACAddress.HardwareAddr, err = randommac.UnicastAndLocallyAdministered()
+	if err != nil {
+		return err
+	}
+	if err := tmpVMDir.SetConfig(vmConfig); err != nil {
+		return err
+	}
+
+	_, err = globallock.With[struct{}](cmd.Context(), func() (struct{}, error) {
+		// Ensure the target VM directory does not exist
+		if local.Exists(dstLocalName) {
+			return struct{}{}, fmt.Errorf("VM %q already exists", dstLocalName)
+		}
+
+		if err := local.MoveIn(dstLocalName, tmpVMDir); err != nil {
+			return struct{}{}, err
+		}
+
+		return struct{}{}, nil
+	})
+
+	return err
 }

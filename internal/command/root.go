@@ -13,6 +13,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/command/run"
 	"github.com/cirruslabs/vetu/internal/command/set"
 	"github.com/cirruslabs/vetu/internal/command/stop"
+	"github.com/cirruslabs/vetu/internal/storage/temporary"
 	"github.com/cirruslabs/vetu/internal/version"
 	"github.com/spf13/cobra"
 )
@@ -23,6 +24,9 @@ func NewRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Version:       version.FullVersion,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return temporary.GC()
+		},
 	}
 
 	cmd.AddCommand(

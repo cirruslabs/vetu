@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/filelock"
+	"github.com/cirruslabs/vetu/internal/pidlock"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"io/fs"
 	"os"
@@ -11,8 +12,7 @@ import (
 )
 
 type VMDirectory struct {
-	baseDir  string
-	vmConfig vmconfig.VMConfig
+	baseDir string
 }
 
 type State string
@@ -22,33 +22,20 @@ const (
 	StateRunning State = "running"
 )
 
-func Initialize(path string) (*VMDirectory, error) {
-	vmDir := &VMDirectory{
-		baseDir: path,
-	}
-
-	if err := vmDir.SetConfig(vmconfig.New()); err != nil {
-		return nil, err
-	}
-
-	return vmDir, nil
-}
-
 func Load(path string) (*VMDirectory, error) {
 	vmDir := &VMDirectory{
 		baseDir: path,
 	}
 
-	vmConfigJSONBytes, err := os.ReadFile(vmDir.ConfigPath())
-	if err != nil {
-		return nil, fmt.Errorf("failed to read VM's config: %v", err)
-	}
-
-	if err := json.Unmarshal(vmConfigJSONBytes, &vmDir.vmConfig); err != nil {
-		return nil, fmt.Errorf("failed to parse VM's config: %v", err)
-	}
-
 	return vmDir, nil
+}
+
+func (vmDir *VMDirectory) FileLock() (*filelock.FileLock, error) {
+	return filelock.New(vmDir.Path())
+}
+
+func (vmDir *VMDirectory) PIDLock() (*pidlock.PIDLock, error) {
+	return pidlock.New(vmDir.ConfigPath())
 }
 
 func (vmDir *VMDirectory) Path() string {
@@ -79,7 +66,7 @@ func (vmDir *VMDirectory) Size() (uint64, error) {
 }
 
 func (vmDir *VMDirectory) Running() bool {
-	lock, err := filelock.New(vmDir.ConfigPath())
+	lock, err := pidlock.New(vmDir.ConfigPath())
 	if err != nil {
 		return false
 	}
@@ -112,21 +99,29 @@ func (vmDir *VMDirectory) InitramfsPath() string {
 	return filepath.Join(vmDir.baseDir, "initramfs")
 }
 
-func (vmDir *VMDirectory) Config() vmconfig.VMConfig {
-	return vmDir.vmConfig
+func (vmDir *VMDirectory) Config() (*vmconfig.VMConfig, error) {
+	vmConfigBytes, err := os.ReadFile(vmDir.ConfigPath())
+	if err != nil {
+		return nil, fmt.Errorf("failed to read VM's config: %v", err)
+	}
+
+	vmConfig, err := vmconfig.NewFromJSON(vmConfigBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse VM's config: %v", err)
+	}
+
+	return vmConfig, nil
 }
 
 func (vmDir *VMDirectory) SetConfig(vmConfig *vmconfig.VMConfig) error {
 	vmConfigJSONBytes, err := json.Marshal(vmConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to serialize VM's config: %v", err)
 	}
 
 	if err := os.WriteFile(vmDir.ConfigPath(), vmConfigJSONBytes, 0600); err != nil {
-		return err
+		return fmt.Errorf("failed to write VM's config: %v", err)
 	}
-
-	vmDir.vmConfig = *vmConfig
 
 	return nil
 }

@@ -2,11 +2,13 @@ package push
 
 import (
 	"github.com/cirruslabs/vetu/internal/dockerhosts"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
 	"github.com/cirruslabs/vetu/internal/oci"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/storage/remote"
+	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/spf13/cobra"
@@ -41,7 +43,24 @@ func runPush(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	vmDir, err := local.Open(srcLocalName)
+	// Open and lock VM directory (under a global lock) until the end of the "vetu push" execution
+	vmDir, err := globallock.With(cmd.Context(), func() (*vmdirectory.VMDirectory, error) {
+		vmDir, err := local.Open(srcLocalName)
+		if err != nil {
+			return nil, err
+		}
+
+		lock, err := vmDir.FileLock()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := lock.Trylock(); err != nil {
+			return nil, err
+		}
+
+		return vmDir, nil
+	})
 	if err != nil {
 		return err
 	}

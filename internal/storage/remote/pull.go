@@ -2,8 +2,10 @@ package remote
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/dockerhosts"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
 	"github.com/cirruslabs/vetu/internal/oci"
 	"github.com/cirruslabs/vetu/internal/storage/temporary"
@@ -19,10 +21,32 @@ func Pull(ctx context.Context, remoteName remotename.RemoteName, insecure bool, 
 	}
 
 	// Initialize a temporary directory to which we'll first pull the VM image
-	vmDir, err := temporary.Create()
+	vmDir, lock, err := temporary.CreateTryLocked()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = lock.Unlock()
+	}()
+
+	// Lock the registry
+	registryLock, err := RegistryLock(remoteName)
+	if err != nil {
+		return err
+	}
+	err = registryLock.Trylock()
+	if errors.Is(err, filelock.ErrAlreadyLocked) {
+		fmt.Printf("a pull for registry %s is already in-progress, "+
+			"waiting for the lock...\n", remoteName.Registry)
+
+		err = registryLock.Lock(ctx)
+	}
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = registryLock.Unlock()
+	}()
 
 	// Load hosts from the Docker configuration file
 	hosts, err := dockerhosts.Load(reference, insecure)

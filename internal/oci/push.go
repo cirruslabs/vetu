@@ -102,7 +102,12 @@ func PushVMDirectory(
 	}
 
 	// Push VM's disks
-	for _, disk := range vmDir.Config().Disks {
+	vmConfig, err := vmDir.Config()
+	if err != nil {
+		return "", err
+	}
+
+	for _, disk := range vmConfig.Disks {
 		fmt.Printf("pushing disk %s...\n", disk.Name)
 
 		vmDiskDescriptors, err := pushDisk(ctx, client, reference, filepath.Join(vmDir.Path(), disk.Name),

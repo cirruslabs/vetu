@@ -2,6 +2,7 @@ package list
 
 import (
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/storage/remote"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
@@ -69,10 +70,18 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	table.AddRow("Source", "Name", "Size", "State")
 
-	for source, list := range desiredSources {
-		if err := addVMsToTable(table, source, list); err != nil {
-			return err
+	// Retrieve VMs metadata under a global lock
+	_, err := globallock.With(cmd.Context(), func() (struct{}, error) {
+		for source, list := range desiredSources {
+			if err := addVMsToTable(table, source, list); err != nil {
+				return struct{}{}, err
+			}
 		}
+
+		return struct{}{}, nil
+	})
+	if err != nil {
+		return err
 	}
 
 	fmt.Println(table.String())

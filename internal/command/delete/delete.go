@@ -2,7 +2,8 @@
 package delete
 
 import (
-	"fmt"
+	"errors"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	namepkg "github.com/cirruslabs/vetu/internal/name"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
@@ -34,20 +35,25 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		names = append(names, name)
 	}
 
-	for _, name := range names {
-		var err error
+	// Delete VMs under a global lock
+	_, err := globallock.With(cmd.Context(), func() (struct{}, error) {
+		var errs []error
 
-		switch typedName := name.(type) {
-		case localname.LocalName:
-			err = local.Delete(typedName)
-		case remotename.RemoteName:
-			err = remote.Delete(typedName)
+		for _, name := range names {
+			var err error
+
+			switch typedName := name.(type) {
+			case localname.LocalName:
+				err = local.Delete(typedName)
+			case remotename.RemoteName:
+				err = remote.Delete(typedName)
+			}
+
+			errs = append(errs, err)
 		}
 
-		if err != nil {
-			fmt.Printf("failed to delete VM %q: %v\n", name, err)
-		}
-	}
+		return struct{}{}, errors.Join(errs...)
+	})
 
-	return nil
+	return err
 }

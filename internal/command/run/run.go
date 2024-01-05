@@ -3,14 +3,16 @@ package run
 import (
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/externalcommand/cloudhypervisor"
-	"github.com/cirruslabs/vetu/internal/filelock"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/network"
 	"github.com/cirruslabs/vetu/internal/network/bridged"
 	"github.com/cirruslabs/vetu/internal/network/host"
 	"github.com/cirruslabs/vetu/internal/network/software"
+	"github.com/cirruslabs/vetu/internal/pidlock"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
+	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"os"
@@ -48,18 +50,38 @@ func runRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	vmDir, err := local.Open(localName)
+	// Open and lock VM directory (under a global lock) until the end of the "vetu run" execution
+	vmDir, err := globallock.With(cmd.Context(), func() (*vmdirectory.VMDirectory, error) {
+		vmDir, err := local.Open(localName)
+		if err != nil {
+			return nil, err
+		}
+
+		lock, err := vmDir.FileLock()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := lock.Trylock(); err != nil {
+			return nil, err
+		}
+
+		return vmDir, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	vmConfig := vmDir.Config()
+	vmConfig, err := vmDir.Config()
+	if err != nil {
+		return err
+	}
 
 	// Acquire a lock after reading the config[1]
 	//
 	//nolint:lll
 	// [1]: https://github.com/cirruslabs/tart/blob/8c011623be2ed8254cd91b15c336c2fff2b6f9be/Sources/tart/Commands/Run.swift#L209-L220
-	lock, err := filelock.New(vmDir.ConfigPath())
+	lock, err := pidlock.New(vmDir.ConfigPath())
 	if err != nil {
 		return err
 	}
@@ -74,16 +96,16 @@ func runRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Initialize network
-	var network network.Network
-
-	switch {
-	case netBridged != "":
-		network, err = bridged.New(netBridged)
-	case netHost:
-		network, err = host.New(vmConfig.MACAddress.HardwareAddr)
-	default:
-		network, err = software.New(vmConfig.MACAddress.HardwareAddr)
-	}
+	network, err := globallock.With(cmd.Context(), func() (network.Network, error) {
+		switch {
+		case netBridged != "":
+			return bridged.New(netBridged)
+		case netHost:
+			return host.New(vmConfig.MACAddress.HardwareAddr)
+		default:
+			return software.New(vmConfig.MACAddress.HardwareAddr)
+		}
+	})
 	if err != nil {
 		return fmt.Errorf("failed to initialize VM's network: %v", err)
 	}

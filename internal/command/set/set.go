@@ -3,6 +3,7 @@ package set
 import (
 	"errors"
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
@@ -44,12 +45,32 @@ func runSet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	vmDir, err := local.Open(localName)
+	// Open and lock VM directory (under a global lock) until the end of the "vetu set" execution
+	vmDir, err := globallock.With(cmd.Context(), func() (*vmdirectory.VMDirectory, error) {
+		vmDir, err := local.Open(localName)
+		if err != nil {
+			return nil, err
+		}
+
+		lock, err := vmDir.FileLock()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := lock.Trylock(); err != nil {
+			return nil, err
+		}
+
+		return vmDir, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	vmConfig := vmDir.Config()
+	vmConfig, err := vmDir.Config()
+	if err != nil {
+		return err
+	}
 
 	if cpu != 0 {
 		vmConfig.CPUCount = cpu
@@ -65,10 +86,10 @@ func runSet(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	return vmDir.SetConfig(&vmConfig)
+	return vmDir.SetConfig(vmConfig)
 }
 
-func resizeDisk(vmDir *vmdirectory.VMDirectory, vmConfig vmconfig.VMConfig) error {
+func resizeDisk(vmDir *vmdirectory.VMDirectory, vmConfig *vmconfig.VMConfig) error {
 	if len(vmConfig.Disks) < 1 {
 		return fmt.Errorf("%w: VM has no disks", ErrSet)
 	}

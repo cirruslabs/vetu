@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/randommac"
 	"github.com/cirruslabs/vetu/internal/storage/local"
@@ -46,21 +47,15 @@ func NewCommand() *cobra.Command {
 func runCreate(cmd *cobra.Command, args []string) error {
 	name := args[0]
 
-	localName, err := localname.NewFromString(name)
+	vmDir, lock, err := temporary.CreateTryLocked()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = lock.Unlock()
+	}()
 
-	if local.Exists(localName) {
-		return fmt.Errorf("VM %q already exists", localName.String())
-	}
-
-	vmDir, err := temporary.Create()
-	if err != nil {
-		return err
-	}
-
-	vmConfig := vmDir.Config()
+	vmConfig := vmconfig.New()
 
 	// Kernel
 	if kernel != "" {
@@ -107,9 +102,23 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 	vmConfig.MACAddress.HardwareAddr = randomMAC
 
-	if err := vmDir.SetConfig(&vmConfig); err != nil {
+	if err := vmDir.SetConfig(vmConfig); err != nil {
 		return err
 	}
 
-	return local.MoveIn(localName, vmDir)
+	// Move-in the created VM under a global lock
+	_, err = globallock.With(cmd.Context(), func() (struct{}, error) {
+		localName, err := localname.NewFromString(name)
+		if err != nil {
+			return struct{}{}, err
+		}
+
+		if local.Exists(localName) {
+			return struct{}{}, fmt.Errorf("VM %q already exists", localName.String())
+		}
+
+		return struct{}{}, local.MoveIn(localName, vmDir)
+	})
+
+	return err
 }

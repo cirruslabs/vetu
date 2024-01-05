@@ -2,6 +2,7 @@ package remote
 
 import (
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/homedir"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
@@ -35,6 +36,9 @@ func Link(digestedRemoteName remotename.RemoteName, taggedRemoteName remotename.
 		return err
 	}
 
+	// Make sure that the old symbolic link does not exist (if any)
+	_ = os.Remove(newname)
+
 	return os.Symlink(oldname, newname)
 }
 
@@ -60,7 +64,12 @@ func MoveIn(name remotename.RemoteName, digest digest.Digest, vmDir *vmdirectory
 
 	// Symlink to the digest directory if tag is used
 	if name.Tag != "" {
-		return os.Symlink(concretePath, filepath.Join(basePath, name.Tag))
+		tagPath := filepath.Join(basePath, name.Tag)
+
+		// Make sure that the old symbolic link does not exist (if any)
+		_ = os.Remove(tagPath)
+
+		return os.Symlink(concretePath, tagPath)
 	}
 
 	return nil
@@ -154,6 +163,21 @@ func Delete(name remotename.RemoteName) error {
 	}
 
 	return gc()
+}
+
+func RegistryLock(name remotename.RemoteName) (*filelock.FileLock, error) {
+	baseDir, err := initialize()
+	if err != nil {
+		return nil, err
+	}
+
+	registryDir := filepath.Join(baseDir, name.Registry)
+
+	if err := os.MkdirAll(registryDir, 0755); err != nil {
+		return nil, err
+	}
+
+	return filelock.New(registryDir)
 }
 
 func PathForResolved(name remotename.RemoteName) (string, error) {

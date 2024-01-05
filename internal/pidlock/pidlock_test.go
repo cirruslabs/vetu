@@ -1,11 +1,12 @@
-package filelock_test
+package pidlock_test
 
 import (
 	"errors"
 	"fmt"
-	"github.com/cirruslabs/vetu/internal/filelock"
+	"github.com/cirruslabs/vetu/internal/pidlock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/sys/unix"
 	"log"
 	"os"
 	"os/exec"
@@ -15,11 +16,14 @@ import (
 
 const (
 	envTestHelperTrylock = "TEST_HELPER_TRYLOCK"
+	envTestHelperPid     = "TEST_HELPER_PID"
 )
 
 func TestMain(m *testing.M) {
 	if lockPath, ok := os.LookupEnv(envTestHelperTrylock); ok {
 		testHelperTrylock(lockPath)
+	} else if lockPath, ok := os.LookupEnv(envTestHelperPid); ok {
+		testHelperPid(lockPath)
 	} else {
 		m.Run()
 	}
@@ -30,7 +34,7 @@ func TestTrylock(t *testing.T) {
 	lockPath := touch(t)
 
 	// Acquire a lock
-	holderLock, err := filelock.New(lockPath)
+	holderLock, err := pidlock.New(lockPath)
 	require.NoError(t, err)
 	require.NoError(t, holderLock.Trylock())
 
@@ -38,16 +42,49 @@ func TestTrylock(t *testing.T) {
 	runHelper(t, envTestHelperTrylock, lockPath)
 }
 
+func TestPid(t *testing.T) {
+	// Create a lock file
+	lockPath := touch(t)
+
+	// Acquire a lock
+	holderLock, err := pidlock.New(lockPath)
+	require.NoError(t, err)
+	require.NoError(t, holderLock.Trylock())
+
+	// Run helper process
+	runHelper(t, envTestHelperPid, lockPath)
+}
+
 func testHelperTrylock(lockPath string) {
 	// Try to acquire a lock
-	lock, err := filelock.New(lockPath)
+	lock, err := pidlock.New(lockPath)
 	if err != nil {
 		panic(err)
 	}
 
 	err = lock.Trylock()
-	if !errors.Is(err, filelock.ErrAlreadyLocked) {
+	if !errors.Is(err, pidlock.ErrAlreadyLocked) {
 		log.Panicf("expected a filelock.ErrAlreadyLocked error, got %v", err)
+	}
+}
+
+func testHelperPid(lockPath string) {
+	// Retrieve the lock file's attached PID
+	lock, err := pidlock.New(lockPath)
+	if err != nil {
+		panic(err)
+	}
+
+	pid, err := lock.Pid()
+	if err != nil {
+		panic(err)
+	}
+
+	ppid := unix.Getppid()
+
+	// Ensure that it's the same PID as that of a parent process
+	if int(pid) != ppid {
+		log.Panicf("expected lock PID to be %d, got %d instead", ppid, pid)
 	}
 }
 

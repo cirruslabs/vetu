@@ -1,73 +1,65 @@
 package filelock
 
 import (
+	"context"
 	"errors"
 	"golang.org/x/sys/unix"
 	"syscall"
+	"time"
 )
 
 var ErrAlreadyLocked = errors.New("already locked")
 
 type FileLock struct {
-	fd uintptr
+	fd int
 }
 
 func New(path string) (*FileLock, error) {
-	fd, err := unix.Open(path, unix.O_RDWR, 0)
+	fd, err := unix.Open(path, unix.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	return &FileLock{
-		fd: uintptr(fd),
+		fd: fd,
 	}, nil
 }
 
 func (fl *FileLock) Trylock() error {
-	_, err := fl.lockWrapper(unix.F_SETLK, unix.F_WRLCK)
-
-	return err
+	return fl.lockWrapper(unix.LOCK_EX | unix.LOCK_NB)
 }
 
-func (fl *FileLock) Lock() error {
-	_, err := fl.lockWrapper(unix.F_SETLKW, unix.F_WRLCK)
+func (fl *FileLock) Lock(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			if err := fl.Trylock(); !errors.Is(err, ErrAlreadyLocked) {
+				return err
+			}
+		}
 
-	return err
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 func (fl *FileLock) Unlock() error {
-	_, err := fl.lockWrapper(unix.F_SETLK, unix.F_UNLCK)
-
-	return err
+	return fl.lockWrapper(unix.LOCK_UN)
 }
 
-func (fl *FileLock) Pid() (int32, error) {
-	result, err := fl.lockWrapper(unix.F_GETLK, unix.F_RDLCK)
-	if err != nil {
-		return 0, err
-	}
-
-	return result.Pid, nil
-}
 func (fl *FileLock) Close() error {
-	return unix.Close(int(fl.fd))
+	return unix.Close(fl.fd)
 }
 
-func (fl *FileLock) lockWrapper(operation int, lockType int16) (*unix.Flock_t, error) {
-	result := &unix.Flock_t{
-		Type:   lockType,
-		Whence: unix.SEEK_SET,
-		Start:  0,
-		Len:    0,
-	}
-
-	if err := unix.FcntlFlock(fl.fd, operation, result); err != nil {
-		if operation == unix.F_SETLK && errors.Is(err, syscall.EAGAIN) {
-			return nil, ErrAlreadyLocked
+func (fl *FileLock) lockWrapper(how int) error {
+	if err := unix.Flock(fl.fd, how); err != nil {
+		if errors.Is(err, syscall.EAGAIN) {
+			return ErrAlreadyLocked
 		}
 
-		return nil, err
+		return err
 	}
 
-	return result, nil
+	return nil
 }
