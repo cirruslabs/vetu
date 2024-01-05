@@ -84,17 +84,6 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Ensure the target VM directory does not exist
-	if local.Exists(dstLocalName) {
-		return fmt.Errorf("VM %q already exists", dstLocalName)
-	}
-
-	// Retrieve a path for the target VM directory
-	dstPath, err := local.PathFor(dstLocalName)
-	if err != nil {
-		return err
-	}
-
 	setRandomMAC := func(vmDir *vmdirectory.VMDirectory) error {
 		vmConfig, err := vmDir.Config()
 		if err != nil {
@@ -111,5 +100,23 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return vmDir.SetConfig(vmConfig)
 	}
 
-	return temporary.AtomicallyCopyThrough(srcVMDir.Path(), dstPath, setRandomMAC)
+	tmpVMDir, err := temporary.CreateFrom(srcVMDir.Path(), setRandomMAC)
+	if err != nil {
+		return err
+	}
+
+	_, err = globallock.With[struct{}](cmd.Context(), func() (struct{}, error) {
+		// Ensure the target VM directory does not exist
+		if local.Exists(dstLocalName) {
+			return struct{}{}, fmt.Errorf("VM %q already exists", dstLocalName)
+		}
+
+		if err := local.MoveIn(dstLocalName, tmpVMDir); err != nil {
+			return struct{}{}, err
+		}
+
+		return struct{}{}, nil
+	})
+
+	return err
 }

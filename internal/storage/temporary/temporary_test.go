@@ -33,13 +33,13 @@ func TestAtomicallyCopyThrough(t *testing.T) {
 	require.NoError(t, err)
 
 	// Copy source directory contents to destination directory
-	dstDir := filepath.Join(tmpDir, "dst")
-	require.NoError(t, temporary.AtomicallyCopyThrough(srcDir, dstDir))
+	dstVMDir, err := temporary.CreateFrom(srcDir)
+	require.NoError(t, err)
 
 	// Ensure that the files copied are identical
 	// to the ones in the source directory
-	require.Equal(t, fileDigest(t, filepath.Join(dstDir, "text.txt")), digest.FromString("Hello, World!\n"))
-	require.Equal(t, fileDigest(t, filepath.Join(dstDir, "binary.bin")), digest.FromBytes(buf))
+	require.Equal(t, fileDigest(t, filepath.Join(dstVMDir.Path(), "text.txt")), digest.FromString("Hello, World!\n"))
+	require.Equal(t, fileDigest(t, filepath.Join(dstVMDir.Path(), "binary.bin")), digest.FromBytes(buf))
 }
 
 func fileDigest(t *testing.T, path string) digest.Digest {

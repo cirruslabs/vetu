@@ -14,10 +14,10 @@ import (
 
 type Hook func(vmDir *vmdirectory.VMDirectory) error
 
-func AtomicallyCopyThrough(srcDir string, dstDir string, hooks ...Hook) error {
+func CreateFrom(srcDir string, hooks ...Hook) (*vmdirectory.VMDirectory, error) {
 	baseDir, err := initialize()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create an intermediate directory that we'll later
@@ -25,69 +25,69 @@ func AtomicallyCopyThrough(srcDir string, dstDir string, hooks ...Hook) error {
 	intermediateDir := filepath.Join(baseDir, uuid.NewString())
 
 	if err := os.Mkdir(intermediateDir, 0755); err != nil {
-		return err
+		return nil, err
 	}
 
 	lock, err := filelock.New(intermediateDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := lock.Trylock(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Copy the files from the source directory
 	// to the intermediate directory
 	dirEntries, err := os.ReadDir(srcDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, dirEntry := range dirEntries {
 		srcFile, err := os.Open(filepath.Join(srcDir, dirEntry.Name()))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		srcFileInfo, err := srcFile.Stat()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		dstFile, err := os.Create(filepath.Join(intermediateDir, dirEntry.Name()))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := dstFile.Truncate(srcFileInfo.Size()); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := sparseio.Copy(dstFile, srcFile); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := srcFile.Close(); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := dstFile.Close(); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	vmDir, err := vmdirectory.Load(intermediateDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, hook := range hooks {
 		if err := hook(vmDir); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return os.Rename(intermediateDir, dstDir)
+	return vmDir, nil
 }
 
 func Create() (*vmdirectory.VMDirectory, error) {
