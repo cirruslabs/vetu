@@ -106,6 +106,24 @@ func Create() (*vmdirectory.VMDirectory, error) {
 	return vmDir, nil
 }
 
+func CreateTryLocked() (*vmdirectory.VMDirectory, *filelock.FileLock, error) {
+	vmDir, err := Create()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	lock, err := vmDir.FileLock()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := lock.Trylock(); err != nil {
+		return nil, nil, err
+	}
+
+	return vmDir, lock, nil
+}
+
 func GC() error {
 	baseDir, err := initialize()
 	if err != nil {

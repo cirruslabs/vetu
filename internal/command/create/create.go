@@ -47,17 +47,13 @@ func NewCommand() *cobra.Command {
 func runCreate(cmd *cobra.Command, args []string) error {
 	name := args[0]
 
-	vmDir, err := temporary.Create()
+	vmDir, lock, err := temporary.CreateTryLocked()
 	if err != nil {
 		return err
 	}
-	lock, err := vmDir.FileLock()
-	if err != nil {
-		return err
-	}
-	if err := lock.Trylock(); err != nil {
-		return err
-	}
+	defer func() {
+		_ = lock.Unlock()
+	}()
 
 	vmConfig := vmconfig.New()
 

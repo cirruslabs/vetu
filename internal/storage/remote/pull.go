@@ -21,15 +21,8 @@ func Pull(ctx context.Context, remoteName remotename.RemoteName, insecure bool, 
 	}
 
 	// Initialize a temporary directory to which we'll first pull the VM image
-	vmDir, err := temporary.Create()
+	vmDir, lock, err := temporary.CreateTryLocked()
 	if err != nil {
-		return err
-	}
-	lock, err := vmDir.FileLock()
-	if err != nil {
-		return err
-	}
-	if err := lock.Trylock(); err != nil {
 		return err
 	}
 	defer func() {
