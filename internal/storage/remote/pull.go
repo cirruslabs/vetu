@@ -41,7 +41,6 @@ func Pull(ctx context.Context, remoteName remotename.RemoteName, insecure bool, 
 	if err != nil {
 		return err
 	}
-
 	err = registryLock.Trylock()
 	if errors.Is(err, filelock.ErrAlreadyLocked) {
 		fmt.Printf("a pull for registry %s is already in-progress, "+
@@ -52,7 +51,6 @@ func Pull(ctx context.Context, remoteName remotename.RemoteName, insecure bool, 
 	if err != nil {
 		return err
 	}
-
 	defer func() {
 		_ = registryLock.Unlock()
 	}()
