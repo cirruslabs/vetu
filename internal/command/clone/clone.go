@@ -95,7 +95,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return temporary.AtomicallyCopyThrough(srcVMDir.Path(), dstPath, func(vmDir *vmdirectory.VMDirectory) error {
+	setRandomMAC := func(vmDir *vmdirectory.VMDirectory) error {
 		vmConfig, err := vmDir.Config()
 		if err != nil {
 			return err
@@ -109,5 +109,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 		vmConfig.MACAddress.HardwareAddr = randomMAC
 
 		return vmDir.SetConfig(vmConfig)
-	})
+	}
+
+	return temporary.AtomicallyCopyThrough(srcVMDir.Path(), dstPath, setRandomMAC)
 }
