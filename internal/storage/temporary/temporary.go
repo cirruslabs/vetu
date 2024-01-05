@@ -12,9 +12,7 @@ import (
 	"path/filepath"
 )
 
-type Hook func(vmDir *vmdirectory.VMDirectory) error
-
-func CreateFrom(srcDir string, hooks ...Hook) (*vmdirectory.VMDirectory, error) {
+func CreateFrom(srcDir string) (*vmdirectory.VMDirectory, error) {
 	baseDir, err := initialize()
 	if err != nil {
 		return nil, err
@@ -79,12 +77,6 @@ func CreateFrom(srcDir string, hooks ...Hook) (*vmdirectory.VMDirectory, error) 
 	vmDir, err := vmdirectory.Load(intermediateDir)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, hook := range hooks {
-		if err := hook(vmDir); err != nil {
-			return nil, err
-		}
 	}
 
 	return vmDir, nil

@@ -84,24 +84,21 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	setRandomMAC := func(vmDir *vmdirectory.VMDirectory) error {
-		vmConfig, err := vmDir.Config()
-		if err != nil {
-			return err
-		}
-
-		// Generate a random MAC-address
-		randomMAC, err := randommac.UnicastAndLocallyAdministered()
-		if err != nil {
-			return err
-		}
-		vmConfig.MACAddress.HardwareAddr = randomMAC
-
-		return vmDir.SetConfig(vmConfig)
+	tmpVMDir, err := temporary.CreateFrom(srcVMDir.Path())
+	if err != nil {
+		return err
 	}
 
-	tmpVMDir, err := temporary.CreateFrom(srcVMDir.Path(), setRandomMAC)
+	// Generate and set a random MAC-address
+	vmConfig, err := tmpVMDir.Config()
 	if err != nil {
+		return err
+	}
+	vmConfig.MACAddress.HardwareAddr, err = randommac.UnicastAndLocallyAdministered()
+	if err != nil {
+		return err
+	}
+	if err := tmpVMDir.SetConfig(vmConfig); err != nil {
 		return err
 	}
 
