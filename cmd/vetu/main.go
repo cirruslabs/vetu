@@ -18,7 +18,7 @@ func main() {
 	var release string
 
 	if version.Version != "unknown" {
-		release = fmt.Sprintf("vetu@%s", version.Version)
+		release = fmt.Sprintf("vetu@v%s", version.Version)
 	}
 
 	err := sentry.Init(sentry.ClientOptions{
