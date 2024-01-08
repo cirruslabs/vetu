@@ -209,12 +209,7 @@ func pushDisk(
 	}
 
 	chunker, err := chunkerpkg.NewChunker(targetDiskLayerSizeBytes, func(w io.Writer) (io.WriteCloser, error) {
-		lz4Writer := lz4.NewWriter(w)
-
-		// Work around https://github.com/pierrec/lz4/pull/212
-		_, _ = lz4Writer.Write([]byte{})
-
-		return lz4Writer, nil
+		return lz4.NewWriter(w), nil
 	})
 	if err != nil {
 		return []types.Descriptor{}, err
