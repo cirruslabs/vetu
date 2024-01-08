@@ -67,5 +67,5 @@ task:
   create_sentry_release_script:
     - export SENTRY_RELEASE="vetu@$CIRRUS_TAG"
     - sentry-cli releases new $SENTRY_RELEASE
-    - sentry-cli releases set-commits $SENTRY_RELEASE --auto
+    - sentry-cli releases set-commits $SENTRY_RELEASE --auto --ignore-missing
     - sentry-cli releases finalize $SENTRY_RELEASE
