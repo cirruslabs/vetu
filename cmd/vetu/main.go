@@ -59,6 +59,9 @@ func main() {
 
 		// Capture the error into stderr and terminate
 		cancel()
+
+		//nolint:gocritic // "log.Fatal will exit, and `defer sentry.Recover()` will not run" — it's OK,
+		// since we're already capturing the error above
 		log.Fatal(err)
 	}
 
