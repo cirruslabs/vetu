@@ -26,7 +26,7 @@ func CreateFrom(srcDir string) (*vmdirectory.VMDirectory, error) {
 		return nil, err
 	}
 
-	lock, err := filelock.New(intermediateDir)
+	lock, err := filelock.New(intermediateDir, filelock.LockExclusive)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func CreateTryLocked() (*vmdirectory.VMDirectory, *filelock.FileLock, error) {
 		return nil, nil, err
 	}
 
-	lock, err := vmDir.FileLock()
+	lock, err := vmDir.FileLock(filelock.LockExclusive)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -138,7 +138,7 @@ func GC() error {
 	for _, dirEntry := range dirEntries {
 		path := filepath.Join(baseDir, dirEntry.Name())
 
-		lock, err := filelock.New(path)
+		lock, err := filelock.New(path, filelock.LockExclusive)
 		if err != nil {
 			// It's quite possible that while iterating and removing the temporary directories,
 			// some of the directories were already moved to their final destination, so ignore them

@@ -30,8 +30,8 @@ func Load(path string) (*VMDirectory, error) {
 	return vmDir, nil
 }
 
-func (vmDir *VMDirectory) FileLock() (*filelock.FileLock, error) {
-	return filelock.New(vmDir.Path())
+func (vmDir *VMDirectory) FileLock(lockType filelock.LockType) (*filelock.FileLock, error) {
+	return filelock.New(vmDir.Path(), lockType)
 }
 
 func (vmDir *VMDirectory) PIDLock() (*pidlock.PIDLock, error) {

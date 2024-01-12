@@ -2,6 +2,7 @@ package local
 
 import (
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/homedir"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
@@ -84,7 +85,7 @@ func Delete(name localname.LocalName) error {
 		return fmt.Errorf("cannot remove VM %s: %v", name.String(), err)
 	}
 
-	lock, err := vmDir.FileLock()
+	lock, err := vmDir.FileLock(filelock.LockExclusive)
 	if err != nil {
 		return fmt.Errorf("cannot remove VM %s: %v", name.String(), err)
 	}

@@ -21,7 +21,7 @@ func With[T any](ctx context.Context, cb func() (T, error)) (T, error) {
 		return result, err
 	}
 
-	lock, err := filelock.New(homeDir)
+	lock, err := filelock.New(homeDir, filelock.LockExclusive)
 	if err != nil {
 		return result, err
 	}

@@ -2,6 +2,7 @@ package push
 
 import (
 	"github.com/cirruslabs/vetu/internal/dockerhosts"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/name/remotename"
@@ -50,7 +51,7 @@ func runPush(cmd *cobra.Command, args []string) error {
 			return nil, err
 		}
 
-		lock, err := vmDir.FileLock()
+		lock, err := vmDir.FileLock(filelock.LockShared)
 		if err != nil {
 			return nil, err
 		}

@@ -3,6 +3,7 @@ package set
 import (
 	"errors"
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/storage/local"
@@ -52,7 +53,7 @@ func runSet(cmd *cobra.Command, args []string) error {
 			return nil, err
 		}
 
-		lock, err := vmDir.FileLock()
+		lock, err := vmDir.FileLock(filelock.LockExclusive)
 		if err != nil {
 			return nil, err
 		}

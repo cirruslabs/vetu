@@ -3,6 +3,7 @@ package run
 import (
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/externalcommand/cloudhypervisor"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name/localname"
 	"github.com/cirruslabs/vetu/internal/network"
@@ -57,7 +58,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 			return nil, err
 		}
 
-		lock, err := vmDir.FileLock()
+		lock, err := vmDir.FileLock(filelock.LockExclusive)
 		if err != nil {
 			return nil, err
 		}
