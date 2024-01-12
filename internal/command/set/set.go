@@ -16,7 +16,7 @@ import (
 )
 
 var cpu uint8
-var memory uint16
+var memory uint64
 var diskSize uint16
 
 var ErrSet = errors.New("failed to set VM configuration")
@@ -30,7 +30,7 @@ func NewCommand() *cobra.Command {
 	}
 
 	cmd.Flags().Uint8Var(&cpu, "cpu", 0, "number of VM CPUs to use for the VM")
-	cmd.Flags().Uint16Var(&memory, "memory", 0, "amount of memory to use "+
+	cmd.Flags().Uint64Var(&memory, "memory", 0, "amount of memory to use "+
 		"for the VM in MiB (mebibytes)")
 	cmd.Flags().Uint16Var(&diskSize, "disk-size", 0, "resize the primary VMs disk "+
 		"to the specified size in GB (note that the disk size can only be increased to avoid losing data)")
