@@ -177,7 +177,7 @@ func RegistryLock(name remotename.RemoteName) (*filelock.FileLock, error) {
 		return nil, err
 	}
 
-	return filelock.New(registryDir)
+	return filelock.New(registryDir, filelock.LockExclusive)
 }
 
 func PathForResolved(name remotename.RemoteName) (string, error) {

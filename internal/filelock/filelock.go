@@ -11,22 +11,31 @@ import (
 var ErrAlreadyLocked = errors.New("already locked")
 
 type FileLock struct {
-	fd int
+	fd       int
+	lockType LockType
 }
 
-func New(path string) (*FileLock, error) {
+type LockType int
+
+const (
+	LockShared    LockType = unix.LOCK_SH
+	LockExclusive LockType = unix.LOCK_EX
+)
+
+func New(path string, lockType LockType) (*FileLock, error) {
 	fd, err := unix.Open(path, unix.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	return &FileLock{
-		fd: fd,
+		fd:       fd,
+		lockType: lockType,
 	}, nil
 }
 
 func (fl *FileLock) Trylock() error {
-	return fl.lockWrapper(unix.LOCK_EX | unix.LOCK_NB)
+	return fl.lockWrapper(int(fl.lockType) | unix.LOCK_NB)
 }
 
 func (fl *FileLock) Lock(ctx context.Context) error {

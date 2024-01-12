@@ -2,6 +2,7 @@ package clone
 
 import (
 	"fmt"
+	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name"
 	"github.com/cirruslabs/vetu/internal/name/localname"
@@ -69,7 +70,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 			return nil, err
 		}
 
-		lock, err := srcVMDir.FileLock()
+		lock, err := srcVMDir.FileLock(filelock.LockShared)
 		if err != nil {
 			return nil, err
 		}
