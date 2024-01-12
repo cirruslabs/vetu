@@ -29,8 +29,8 @@ func NewCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 	}
 
-	cmd.Flags().Uint8Var(&cpu, "cpu", 2, "number of VM CPUs to use for the VM")
-	cmd.Flags().Uint16Var(&memory, "memory", 4096, "amount of memory to use "+
+	cmd.Flags().Uint8Var(&cpu, "cpu", 0, "number of VM CPUs to use for the VM")
+	cmd.Flags().Uint16Var(&memory, "memory", 0, "amount of memory to use "+
 		"for the VM in MiB (mebibytes)")
 	cmd.Flags().Uint16Var(&diskSize, "disk-size", 0, "resize the primary VMs disk "+
 		"to the specified size in GB (note that the disk size can only be increased to avoid losing data)")
