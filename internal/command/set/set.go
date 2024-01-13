@@ -78,7 +78,7 @@ func runSet(cmd *cobra.Command, args []string) error {
 	}
 
 	if memory != 0 {
-		vmConfig.MemorySize = uint64(memory) * 1024 * 1024
+		vmConfig.MemorySize = memory * 1024 * 1024
 	}
 
 	if diskSize != 0 {
