@@ -4,6 +4,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/command/clone"
 	"github.com/cirruslabs/vetu/internal/command/create"
 	deletepkg "github.com/cirruslabs/vetu/internal/command/delete"
+	"github.com/cirruslabs/vetu/internal/command/fqn"
 	"github.com/cirruslabs/vetu/internal/command/ip"
 	"github.com/cirruslabs/vetu/internal/command/list"
 	"github.com/cirruslabs/vetu/internal/command/login"
@@ -42,6 +43,7 @@ func NewRootCmd() *cobra.Command {
 		push.NewCommand(),
 		stop.NewCommand(),
 		deletepkg.NewCommand(),
+		fqn.NewCommand(),
 	)
 
 	return cmd
