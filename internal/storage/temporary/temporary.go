@@ -7,7 +7,9 @@ import (
 	"github.com/cirruslabs/vetu/internal/sparseio"
 	"github.com/cirruslabs/vetu/internal/vmconfig"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
+	"github.com/cirruslabs/vetu/internal/zerocopy"
 	"github.com/google/uuid"
+	"golang.org/x/sys/unix"
 	"os"
 	"path/filepath"
 )
@@ -61,8 +63,15 @@ func CreateFrom(srcDir string) (*vmdirectory.VMDirectory, error) {
 			return nil, err
 		}
 
-		if err := sparseio.Copy(dstFile, srcFile); err != nil {
-			return nil, err
+		if err := zerocopy.Clone(int(dstFile.Fd()), int(srcFile.Fd())); err != nil {
+			if !errors.Is(err, unix.ENOTSUP) {
+				return nil, err
+			}
+
+			// Fall back to slower sparse I/O copying if zero-copy is not supported
+			if err := sparseio.Copy(dstFile, srcFile); err != nil {
+				return nil, err
+			}
 		}
 
 		if err := srcFile.Close(); err != nil {
