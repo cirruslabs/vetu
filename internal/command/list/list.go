@@ -12,7 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type listFunc func() ([]lo.Tuple2[string, *vmdirectory.VMDirectory], error)
+type desiredSource struct {
+	Name     string
+	ListFunc func() ([]lo.Tuple2[string, *vmdirectory.VMDirectory], error)
+}
 
 var source string
 var quiet bool
@@ -33,17 +36,20 @@ func NewCommand() *cobra.Command {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	desiredSources := map[string]listFunc{}
+	var desiredSources []desiredSource
 
 	// Support --source
 	switch source {
 	case "local":
-		desiredSources["local"] = local.List
+		desiredSources = append(desiredSources,
+			desiredSource{"local", local.List})
 	case "oci":
-		desiredSources["oci"] = remote.List
+		desiredSources = append(desiredSources,
+			desiredSource{"oci", remote.List})
 	case "":
-		desiredSources["local"] = local.List
-		desiredSources["oci"] = remote.List
+		desiredSources = append(desiredSources,
+			desiredSource{"local", local.List},
+			desiredSource{"oci", remote.List})
 	default:
 		return fmt.Errorf("cannot display VMs from an unsupported source %q", source)
 	}
@@ -51,7 +57,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	// Support -q/--quiet
 	if quiet {
 		for _, list := range desiredSources {
-			vms, err := list()
+			vms, err := list.ListFunc()
 			if err != nil {
 				return err
 			}
@@ -72,8 +78,8 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	// Retrieve VMs metadata under a global lock
 	_, err := globallock.With(cmd.Context(), func() (struct{}, error) {
-		for source, list := range desiredSources {
-			if err := addVMsToTable(table, source, list); err != nil {
+		for _, desiredSource := range desiredSources {
+			if err := addVMsToTable(table, desiredSource); err != nil {
 				return struct{}{}, err
 			}
 		}
@@ -89,8 +95,8 @@ func runList(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func addVMsToTable(table *uitable.Table, source string, list listFunc) error {
-	vms, err := list()
+func addVMsToTable(table *uitable.Table, desiredSource desiredSource) error {
+	vms, err := desiredSource.ListFunc()
 	if err != nil {
 		return err
 	}
@@ -103,7 +109,7 @@ func addVMsToTable(table *uitable.Table, source string, list listFunc) error {
 			return err
 		}
 
-		table.AddRow(source, name, humanize.Bytes(size), vmDir.State())
+		table.AddRow(desiredSource.Name, name, humanize.Bytes(size), vmDir.State())
 	}
 
 	return nil
