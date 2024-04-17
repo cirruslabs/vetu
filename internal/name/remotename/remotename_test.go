@@ -1,4 +1,3 @@
-//nolint:goconst // it's OK to have multiple occurrences of the same string in tests
 package remotename_test
 
 import (
