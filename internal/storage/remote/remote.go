@@ -162,7 +162,7 @@ func Delete(name remotename.RemoteName) error {
 		return err
 	}
 
-	return gc()
+	return GC()
 }
 
 func RegistryLock(name remotename.RemoteName) (*filelock.FileLock, error) {
@@ -231,7 +231,7 @@ func initialize() (string, error) {
 }
 
 //nolint:gocognit // doesn't look complex yet
-func gc() error {
+func GC() error {
 	baseDir, err := initialize()
 	if err != nil {
 		return err
