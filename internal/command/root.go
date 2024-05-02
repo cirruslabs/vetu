@@ -14,6 +14,8 @@ import (
 	"github.com/cirruslabs/vetu/internal/command/run"
 	"github.com/cirruslabs/vetu/internal/command/set"
 	"github.com/cirruslabs/vetu/internal/command/stop"
+	"github.com/cirruslabs/vetu/internal/globallock"
+	"github.com/cirruslabs/vetu/internal/storage/remote"
 	"github.com/cirruslabs/vetu/internal/storage/temporary"
 	"github.com/cirruslabs/vetu/internal/version"
 	"github.com/spf13/cobra"
@@ -26,7 +28,15 @@ func NewRootCmd() *cobra.Command {
 		SilenceErrors: true,
 		Version:       version.FullVersion,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return temporary.GC()
+			if err := temporary.GC(); err != nil {
+				return err
+			}
+
+			_, err := globallock.With(cmd.Context(), func() (struct{}, error) {
+				return struct{}{}, remote.GC()
+			})
+
+			return err
 		},
 	}
 
