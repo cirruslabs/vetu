@@ -45,6 +45,14 @@ func main() {
 		})
 	}
 
+	// Enrich future events with the program arguments and environment variables
+	sentry.ConfigureScope(func(scope *sentry.Scope) {
+		scope.SetContext("os", map[string]interface{}{
+			"args":    os.Args,
+			"environ": os.Environ(),
+		})
+	})
+
 	// Set up a signal-interruptible context
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 
