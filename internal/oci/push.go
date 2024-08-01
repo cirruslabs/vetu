@@ -13,9 +13,10 @@ import (
 	"github.com/opencontainers/go-digest"
 	"github.com/pierrec/lz4/v4"
 	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/types"
 	"github.com/regclient/regclient/types/blob"
+	"github.com/regclient/regclient/types/descriptor"
 	"github.com/regclient/regclient/types/manifest"
+	"github.com/regclient/regclient/types/mediatype"
 	"github.com/regclient/regclient/types/oci/v1"
 	"github.com/regclient/regclient/types/platform"
 	"github.com/regclient/regclient/types/ref"
@@ -40,7 +41,7 @@ func PushVMDirectory(
 	// Create an OCI image manifest
 	ociManifest := v1.Manifest{
 		Versioned: v1.ManifestSchemaVersion,
-		MediaType: types.MediaTypeOCI1Manifest,
+		MediaType: mediatype.OCI1Manifest,
 	}
 
 	// Create an OCI image configuration
@@ -56,7 +57,7 @@ func PushVMDirectory(
 	var err error
 
 	ociManifest.Config, err = pushJSON(ctx, client, reference, ociConfig,
-		types.MediaTypeOCI1ImageConfig, nil)
+		mediatype.OCI1ImageConfig, nil)
 	if err != nil {
 		return "", err
 	}
@@ -138,10 +139,10 @@ func pushFile(
 	path string,
 	mediaType string,
 	annotations map[string]string,
-) (types.Descriptor, error) {
+) (descriptor.Descriptor, error) {
 	fileBytes, err := os.ReadFile(path)
 	if err != nil {
-		return types.Descriptor{}, err
+		return descriptor.Descriptor{}, err
 	}
 
 	return pushBytes(ctx, client, reference, fileBytes, mediaType, annotations, nil)
@@ -154,10 +155,10 @@ func pushJSON(
 	obj interface{},
 	mediaType string,
 	annotations map[string]string,
-) (types.Descriptor, error) {
+) (descriptor.Descriptor, error) {
 	jsonBytes, err := json.Marshal(obj)
 	if err != nil {
-		return types.Descriptor{}, err
+		return descriptor.Descriptor{}, err
 	}
 
 	return pushBytes(ctx, client, reference, jsonBytes, mediaType, annotations, nil)
@@ -171,8 +172,8 @@ func pushBytes(
 	mediaType string,
 	annotations map[string]string,
 	progressBar *progressbar.ProgressBar,
-) (types.Descriptor, error) {
-	desc := types.Descriptor{
+) (descriptor.Descriptor, error) {
+	desc := descriptor.Descriptor{
 		MediaType:   mediaType,
 		Size:        int64(len(data)),
 		Digest:      digest.FromBytes(data),
@@ -200,19 +201,19 @@ func pushDisk(
 	reference ref.Ref,
 	path string,
 	diskName string,
-) ([]types.Descriptor, error) {
-	var result []types.Descriptor
+) ([]descriptor.Descriptor, error) {
+	var result []descriptor.Descriptor
 
 	diskFile, err := os.Open(path)
 	if err != nil {
-		return []types.Descriptor{}, err
+		return []descriptor.Descriptor{}, err
 	}
 
 	chunker, err := chunkerpkg.NewChunker(targetDiskLayerSizeBytes, func(w io.Writer) (io.WriteCloser, error) {
 		return lz4.NewWriter(w), nil
 	})
 	if err != nil {
-		return []types.Descriptor{}, err
+		return []descriptor.Descriptor{}, err
 	}
 
 	errCh := make(chan error, 1)

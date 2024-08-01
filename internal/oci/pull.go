@@ -8,8 +8,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/oci/pull/vetu"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/regclient/manifest"
-	"github.com/regclient/regclient/types"
+	"github.com/regclient/regclient/types/descriptor"
 	manifestpkg "github.com/regclient/regclient/types/manifest"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/samber/lo"
@@ -19,7 +18,7 @@ func PullVMDirectory(
 	ctx context.Context,
 	client *regclient.RegClient,
 	reference ref.Ref,
-	manifest manifest.Manifest,
+	manifest manifestpkg.Manifest,
 	vmDir *vmdirectory.VMDirectory,
 	concurrency int,
 ) error {
@@ -30,7 +29,7 @@ func PullVMDirectory(
 	}
 
 	// Determine the VM image type
-	mediaTypes := lo.Map(layers, func(layer types.Descriptor, index int) string {
+	mediaTypes := lo.Map(layers, func(layer descriptor.Descriptor, index int) string {
 		return layer.MediaType
 	})
 
