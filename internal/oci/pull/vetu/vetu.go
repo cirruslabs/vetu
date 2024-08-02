@@ -11,7 +11,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/pierrec/lz4/v4"
 	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/types"
+	"github.com/regclient/regclient/types/descriptor"
 	manifestpkg "github.com/regclient/regclient/types/manifest"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/samber/lo"
@@ -33,7 +33,7 @@ func PullVMDirectory(
 	}
 
 	// Find VM's config
-	vmConfigs := lo.Filter(layers, func(descriptor types.Descriptor, index int) bool {
+	vmConfigs := lo.Filter(layers, func(descriptor descriptor.Descriptor, index int) bool {
 		return descriptor.MediaType == mediatypes.MediaTypeConfig
 	})
 	if len(vmConfigs) != 1 {
@@ -59,7 +59,7 @@ func PullVMDirectory(
 	}
 
 	// Find VM's kernel
-	vmKernels := lo.Filter(layers, func(descriptor types.Descriptor, index int) bool {
+	vmKernels := lo.Filter(layers, func(descriptor descriptor.Descriptor, index int) bool {
 		return descriptor.MediaType == mediatypes.MediaTypeKernel
 	})
 	if len(vmKernels) != 1 {
@@ -80,7 +80,7 @@ func PullVMDirectory(
 	}
 
 	// Find VM's initramfs
-	vmInitramfses := lo.Filter(layers, func(descriptor types.Descriptor, index int) bool {
+	vmInitramfses := lo.Filter(layers, func(descriptor descriptor.Descriptor, index int) bool {
 		return descriptor.MediaType == mediatypes.MediaTypeInitramfs
 	})
 	if len(vmInitramfses) > 0 {
@@ -102,12 +102,12 @@ func PullVMDirectory(
 	}
 
 	// Find VM's disks
-	disks := lo.Filter(layers, func(desc types.Descriptor, index int) bool {
+	disks := lo.Filter(layers, func(desc descriptor.Descriptor, index int) bool {
 		return desc.MediaType == mediatypes.MediaTypeDisk
 	})
 
 	// Pull VM's disks
-	nameFunc := func(disk types.Descriptor) (string, error) {
+	nameFunc := func(disk descriptor.Descriptor) (string, error) {
 		// Extract name
 		diskName, ok := disk.Annotations[annotations.AnnotationName]
 		if !ok {

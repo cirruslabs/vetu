@@ -27,7 +27,7 @@ const nicID = 1
 
 var ErrInitFailed = errors.New("failed to initialize gVisor")
 
-type gVisorHandler func(stack.TransportEndpointID, stack.PacketBufferPtr) bool
+type gVisorHandler func(stack.TransportEndpointID, *stack.PacketBuffer) bool
 
 type GVisor struct {
 	st *stack.Stack
@@ -175,7 +175,7 @@ func (gvisor *GVisor) forwardUDP(request *udp.ForwarderRequest) {
 		return
 	}
 
-	guestConn := gonet.NewUDPConn(gvisor.st, &wq, ep)
+	guestConn := gonet.NewUDPConn(&wq, ep)
 
 	remoteConn, err := net.Dial("udp", fmt.Sprintf("%s:%d",
 		request.ID().LocalAddress.String(), request.ID().LocalPort))
@@ -213,7 +213,7 @@ func transferWithTimeout(dst net.Conn, src net.Conn, timeout time.Duration) {
 }
 
 func withForwardingFilter(h gVisorHandler, network net.IPNet) gVisorHandler {
-	return func(id stack.TransportEndpointID, ptr stack.PacketBufferPtr) bool {
+	return func(id stack.TransportEndpointID, ptr *stack.PacketBuffer) bool {
 		// A "local" address presented to us as a gateway
 		// is actually a remote address that the guest wants
 		// to connect/send packets to

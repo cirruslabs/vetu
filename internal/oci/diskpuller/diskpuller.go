@@ -7,7 +7,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/dustin/go-humanize"
 	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/types"
+	"github.com/regclient/regclient/types/descriptor"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/samber/lo"
 	"github.com/schollz/progressbar/v3"
@@ -18,11 +18,11 @@ import (
 	"sync"
 )
 
-type NameFromDiskDescriptorFunc func(diskDescriptor types.Descriptor) (string, error)
+type NameFromDiskDescriptorFunc func(diskDescriptor descriptor.Descriptor) (string, error)
 type InitializeDecompressorFunc func(compressedReader io.Reader) io.Reader
 
 type diskTask struct {
-	Desc   types.Descriptor
+	Desc   descriptor.Descriptor
 	Path   string
 	Offset int64
 }
@@ -33,7 +33,7 @@ func PullDisks(
 	reference ref.Ref,
 	vmDir *vmdirectory.VMDirectory,
 	concurrency int,
-	disks []types.Descriptor,
+	disks []descriptor.Descriptor,
 	nameFromDiskDescriptor NameFromDiskDescriptorFunc,
 	uncompressedSizeAnnotation string,
 	initializeDecompressor InitializeDecompressorFunc,
@@ -90,7 +90,7 @@ func PullDisks(
 
 	// Process disk tasks with the specified concurrency
 	totalUncompressedDisksSizeBytes := lo.Sum(lo.Values(diskNameToOffset))
-	totalCompressedDisksSizeBytes := lo.Sum(lo.Map(disks, func(diskDesc types.Descriptor, index int) int64 {
+	totalCompressedDisksSizeBytes := lo.Sum(lo.Map(disks, func(diskDesc descriptor.Descriptor, index int) int64 {
 		return diskDesc.Size
 	}))
 	fmt.Printf("pulling %d disk(s) (%s compressed, %s uncompressed)...\n", len(diskNameToOffset),

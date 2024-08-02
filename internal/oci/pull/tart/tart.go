@@ -14,7 +14,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	cp "github.com/otiai10/copy"
 	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/types"
+	"github.com/regclient/regclient/types/descriptor"
 	manifestpkg "github.com/regclient/regclient/types/manifest"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/samber/lo"
@@ -38,7 +38,7 @@ func PullVMDirectory(
 	}
 
 	// Find VM's config
-	vmConfigs := lo.Filter(layers, func(descriptor types.Descriptor, index int) bool {
+	vmConfigs := lo.Filter(layers, func(descriptor descriptor.Descriptor, index int) bool {
 		return descriptor.MediaType == mediatypes.MediaTypeTartConfig
 	})
 	if len(vmConfigs) != 1 {
@@ -93,12 +93,12 @@ func PullVMDirectory(
 	}
 
 	// Find VM's disks
-	disks := lo.Filter(layers, func(desc types.Descriptor, index int) bool {
+	disks := lo.Filter(layers, func(desc descriptor.Descriptor, index int) bool {
 		return desc.MediaType == mediatypes.MediaTypeTartDisk
 	})
 
 	// Pull VM's disks
-	nameFunc := func(disk types.Descriptor) (string, error) {
+	nameFunc := func(disk descriptor.Descriptor) (string, error) {
 		// Tart VM images have only one disk
 		return diskName, nil
 	}

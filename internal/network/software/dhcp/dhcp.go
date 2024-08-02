@@ -48,7 +48,7 @@ func New(st *stack.Stack, gatewayIP net.IP, vmIP net.IP) (*DHCP, error) {
 			ErrInitFailed, err)
 	}
 
-	conn := gonet.NewUDPConn(st, wq, ep)
+	conn := gonet.NewUDPConn(wq, ep)
 
 	server, err := server4.NewServer("", nil, dhcp.handle, server4.WithConn(conn))
 	if err != nil {
