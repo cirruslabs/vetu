@@ -34,6 +34,9 @@ task:
 task:
   name: Release (Dry Run)
   only_if: $CIRRUS_TAG == ''
+  container:
+    image: golang:latest
+    memory: 8GB
   depends_on:
     - Lint
     - Tests
@@ -48,6 +51,9 @@ task:
 task:
   name: Release
   only_if: $CIRRUS_TAG != ''
+  container:
+    image: golang:latest
+    memory: 8GB
   depends_on:
     - Lint
     - Tests
