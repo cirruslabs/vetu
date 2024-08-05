@@ -24,6 +24,7 @@ import (
 
 var netBridged string
 var netHost bool
+var devices []string
 
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -38,6 +39,10 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&netHost, "net-host", false, "use host-networking "+
 		"(assigns the first available /30 subnet from the private IPv4 address space to the "+
 		"\"vetu*\" interface and serves it using the built-in DHCP server to the VM)")
+	cmd.Flags().StringArrayVar(&devices, "device", []string{},
+		"direct device assignment `parameters` to pass to the Cloud Hypervisor command, can be "+
+			"repeated multiple times to attach multiple devices (e.g. "+
+			"--device=\"path=/sys/bus/pci/devices/0000:01:00.0/,iommu=on\")")
 
 	return cmd
 }
@@ -153,6 +158,11 @@ func runRun(cmd *cobra.Command, args []string) error {
 	}
 
 	hvArgs = append(hvArgs, "--net", strings.Join(netOpts, ","))
+
+	// Devices
+	for _, device := range devices {
+		hvArgs = append(hvArgs, "--device", device)
+	}
 
 	hv, err := cloudhypervisor.CloudHypervisor(cmd.Context(), hvArgs...)
 	if err != nil {
