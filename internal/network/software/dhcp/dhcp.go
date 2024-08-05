@@ -62,7 +62,7 @@ func New(st *stack.Stack, gatewayIP net.IP, vmIP net.IP) (*DHCP, error) {
 func (dhcp *DHCP) Run(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
-		dhcp.server.Close()
+		_ = dhcp.server.Close()
 	}()
 
 	return dhcp.server.Serve()
