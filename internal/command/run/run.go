@@ -41,7 +41,8 @@ func NewCommand() *cobra.Command {
 		"\"vetu*\" interface and serves it using the built-in DHCP server to the VM)")
 	cmd.Flags().StringArrayVar(&devices, "device", []string{},
 		"direct device assignment `parameters` to pass to the Cloud Hypervisor command, can be "+
-			"repeated multiple times (e.g. --device=\"path=/sys/bus/pci/devices/0000:01:00.0/,iommu=on\")")
+			"repeated multiple times to attach multiple devices (e.g. "+
+			"--device=\"path=/sys/bus/pci/devices/0000:01:00.0/,iommu=on\")")
 
 	return cmd
 }
