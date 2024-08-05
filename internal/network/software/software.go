@@ -99,12 +99,20 @@ func New(vmHardwareAddr net.HardwareAddr) (*Network, error) {
 
 	go func() {
 		if err := gvisor.Run(ctx); err != nil {
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return
+			}
+
 			panic(err)
 		}
 	}()
 
 	go func() {
-		if err := dhcp.Run(context.Background()); err != nil {
+		if err := dhcp.Run(ctx); err != nil {
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return
+			}
+
 			panic(err)
 		}
 	}()
