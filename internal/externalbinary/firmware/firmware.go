@@ -1,45 +1,116 @@
+//go:build !(linux && amd64)
+
 package firmware
 
 import (
+	"bufio"
 	"context"
+	"errors"
+	"fmt"
 	"github.com/cirruslabs/vetu/internal/binaryfetcher"
+	"github.com/samber/lo"
 	"io"
-	"strings"
+	"os"
+	"path"
+	"pault.ag/go/debian/control"
+	"pault.ag/go/debian/deb"
+	"runtime"
 )
 
-// Unfortunately, the EDK2 version distributed through package repositories[1]
-// is not compatible with --device (and to be precisely, GPU passthrough),
-// so we fetch the latest EDK2 version from Cloud Hypervisor's GitHub repo
-// to work around the VM booting issues when a GPU with large memory
-// is attached[2][3].
-//
-// [1]: https://download.opensuse.org/repositories/home:/cloud-hypervisor/
-// [2]: https://edk2.groups.io/g/discuss/topic/59340711
-// [3]: https://github.com/cloud-hypervisor/cloud-hypervisor/issues/6147
 const (
-	githubURL      = "https://github.com/cloud-hypervisor/edk2/releases/download/ch-6624aa331f/CLOUDHV.fd"
-	githubFilename = "CLOUDHV-6624aa331f.fd"
+	systemEDKPath = "/usr/share/cloud-hypervisor/CLOUDHV_EFI.fd"
+
+	debRepositoryURL  = "https://download.opensuse.org/repositories/home:/cloud-hypervisor/xUbuntu_22.04"
+	debTargetPackage  = "edk2-cloud-hypervisor"
+	debTargetFilename = "CLOUDHV_EFI.fd"
 )
 
 func Firmware(ctx context.Context) (string, string, error) {
-	desc := "cached EDK2 firmware from GitHub"
+	// Always prefer the EDK2 firmware installed on the system
+	_, err := os.Stat(systemEDKPath)
+	if err == nil {
+		return systemEDKPath, "EDK2 firmware", nil
+	}
 
-	path, err := binaryfetcher.GetOrFetch(ctx, func(ctx context.Context, binaryFile io.Writer) error {
-		resp, err := binaryfetcher.FetchURL(ctx, githubURL)
+	// Fall back to downloading the EDK2 firmware from a .deb-repository
+	fmt.Printf("no EDK2 firmware installed on the system, downloading it from %s...\n",
+		debRepositoryURL)
+
+	binaryPath, err := binaryfetcher.GetOrFetch(ctx, func(ctx context.Context, binaryFile io.Writer) error {
+		// Fetch the Packages file to determine the appropriate .deb
+		// that'll run on runtime.GOARCH
+		debURL, err := determineDebURL(ctx)
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
 
-		desc = strings.ReplaceAll(desc, "cached", "downloaded")
-
-		_, err = io.Copy(binaryFile, resp.Body)
-
-		return err
-	}, githubFilename, true)
+		// Fetch the .deb file and extract the firmware contents to binaryFile
+		return downloadAndExtractDeb(ctx, debURL, binaryFile)
+	}, debTargetFilename, true)
 	if err != nil {
 		return "", "", err
 	}
 
-	return path, desc, nil
+	return binaryPath, "downloaded EDK2 firmware", nil
+}
+
+func determineDebURL(ctx context.Context) (string, error) {
+	// Fetch the Packages file and parse it
+	resp, err := binaryfetcher.FetchURL(ctx, debRepositoryURL+"/Packages")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	sources, err := control.ParseBinaryIndex(bufio.NewReader(resp.Body))
+	if err != nil {
+		return "", err
+	}
+
+	// Find the package that contains EDK2 firmware for the current architecture
+	edk2Source, ok := lo.Find(sources, func(source control.BinaryIndex) bool {
+		return source.Package == debTargetPackage && source.Architecture.CPU == runtime.GOARCH
+	})
+	if !ok {
+		return "", fmt.Errorf("cannot find edk2-cloud-hypervisor package for %v in the repository",
+			runtime.GOARCH)
+	}
+
+	return debRepositoryURL + "/" + edk2Source.Filename, nil
+}
+
+func downloadAndExtractDeb(ctx context.Context, debURL string, binaryFile io.Writer) error {
+	// Fetch the .deb package and parse it
+	debPath, err := binaryfetcher.FetchURLToFile(ctx, debURL)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(debPath)
+
+	parsedDeb, debCloser, err := deb.LoadFile(debPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = debCloser()
+	}()
+
+	// Iterate over .deb package data files and look for EDK2 firmware
+	for {
+		next, err := parsedDeb.Data.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return fmt.Errorf("cannot find %s file in the %s package", debTargetFilename,
+					debURL)
+			}
+
+			return err
+		}
+
+		if path.Base(next.Name) == debTargetFilename {
+			_, err := io.Copy(binaryFile, parsedDeb.Data)
+
+			return err
+		}
+	}
 }
