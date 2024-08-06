@@ -19,7 +19,7 @@ require (
 	github.com/otiai10/copy v1.14.0
 	github.com/pierrec/lz4/v4 v4.1.21
 	github.com/projectcalico/libcalico-go v1.7.3
-	github.com/regclient/regclient v0.7.0
+	github.com/regclient/regclient v0.7.1
 	github.com/samber/lo v1.46.0
 	github.com/schollz/progressbar/v3 v3.14.5
 	github.com/seancfoley/ipaddress-go v1.6.0
