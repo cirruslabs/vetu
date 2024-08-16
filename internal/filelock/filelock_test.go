@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 	} else if lockPath, ok := os.LookupEnv(envTestHelperTrylockShared); ok {
 		testHelperTrylockShared(lockPath)
 	} else {
-		m.Run()
+		os.Exit(m.Run())
 	}
 }
 
