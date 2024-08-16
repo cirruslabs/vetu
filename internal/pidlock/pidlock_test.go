@@ -25,7 +25,7 @@ func TestMain(m *testing.M) {
 	} else if lockPath, ok := os.LookupEnv(envTestHelperPid); ok {
 		testHelperPid(lockPath)
 	} else {
-		m.Run()
+		os.Exit(m.Run())
 	}
 }
 

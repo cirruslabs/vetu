@@ -24,21 +24,34 @@ func GetOrFetch(ctx context.Context, fetchFunc FetchFunc, binaryName string, exe
 
 	// Run the user-provided function to fetch the binary file
 	// if not available in the cache
-	binaryFile, err := os.Create(binaryPath)
+	binaryFile, err := os.CreateTemp("", "vetu-binary-file-*")
 	if err != nil {
 		return "", err
 	}
-	defer binaryFile.Close()
 
 	if err := fetchFunc(ctx, binaryFile); err != nil {
+		_ = binaryFile.Close()
+		_ = os.Remove(binaryFile.Name())
+
 		return "", err
 	}
 
 	// Make the binary executable if requested
 	if executable {
 		if err := binaryFile.Chmod(0755); err != nil {
+			_ = binaryFile.Close()
+			_ = os.Remove(binaryFile.Name())
+
 			return "", err
 		}
+	}
+
+	if err := binaryFile.Close(); err != nil {
+		return "", err
+	}
+
+	if err := os.Rename(binaryFile.Name(), binaryPath); err != nil {
+		return "", err
 	}
 
 	return binaryPath, nil

@@ -40,7 +40,6 @@ func TestCopyRandomized(t *testing.T) {
 
 		// Randomize the contents of some chunks
 		if rand.Intn(2) == 1 {
-			//nolint:staticcheck // what's the alternative to the deprecated rand.Read() anyways?
 			_, err = rand.Read(chunk)
 			require.NoError(t, err)
 		}
