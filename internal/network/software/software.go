@@ -54,7 +54,7 @@ func New(vmHardwareAddr net.HardwareAddr) (*Network, error) {
 	// shortly after we create it, which results in the removal of our static neighbor.
 	//
 	// [1]: https://github.com/systemd/systemd/issues/21185
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	// Add a permanent neighbor so that "vetu ip" would work
 	if err := netlink.NeighAdd(&netlink.Neigh{
