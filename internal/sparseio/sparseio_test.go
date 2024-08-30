@@ -1,6 +1,7 @@
 package sparseio_test
 
 import (
+	cryptorand "crypto/rand"
 	"github.com/cirruslabs/vetu/internal/sparseio"
 	"github.com/dustin/go-humanize"
 	"github.com/opencontainers/go-digest"
@@ -40,7 +41,7 @@ func TestCopyRandomized(t *testing.T) {
 
 		// Randomize the contents of some chunks
 		if rand.Intn(2) == 1 {
-			_, err = rand.Read(chunk)
+			_, err = cryptorand.Read(chunk)
 			require.NoError(t, err)
 		}
 
