@@ -6,6 +6,7 @@ import (
 	"github.com/cirruslabs/vetu/internal/command"
 	"github.com/cirruslabs/vetu/internal/version"
 	"github.com/getsentry/sentry-go"
+	"golang.org/x/sys/unix"
 	"log"
 	"os"
 	"os/signal"
@@ -54,7 +55,7 @@ func main() {
 	})
 
 	// Set up a signal-interruptible context
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), unix.SIGINT, unix.SIGTERM)
 
 	// Disable log timestamping
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))

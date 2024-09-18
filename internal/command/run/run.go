@@ -1,6 +1,8 @@
 package run
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/externalcommand/cloudhypervisor"
 	"github.com/cirruslabs/vetu/internal/filelock"
@@ -16,10 +18,12 @@ import (
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
+	"golang.org/x/sys/unix"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 var netBridged string
@@ -182,5 +186,25 @@ func runRun(cmd *cobra.Command, args []string) error {
 	hv.Stderr = os.Stderr
 	hv.Stdin = os.Stdin
 
-	return hv.Run()
+	// Graceful Cloud Hypervisor termination[1]
+	//
+	// [1]: https://www.cloudhypervisor.org/blog/cloud-hypervisor-v0.11.0-released/#sigtermsigint-interrupt-signal-handling
+	hv.Cancel = func() error {
+		return hv.Process.Signal(unix.SIGTERM)
+	}
+
+	// If Cancel() fails to terminate the Cloud Hypervisor for some reason,
+	// ensure that it will eventually be killed after some time.
+	hv.WaitDelay = 30 * time.Second
+
+	if err := hv.Run(); err != nil {
+		// Context cancellation is not an error
+		if errors.Is(err, context.Canceled) {
+			return nil
+		}
+
+		return err
+	}
+
+	return nil
 }
