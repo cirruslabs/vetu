@@ -79,6 +79,7 @@ func runStop(cmd *cobra.Command, args []string) error {
 
 		return fmt.Errorf("VM is still running")
 	}, retry.Context(gracefulTerminationCtx),
+		retry.Attempts(0),
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(100*time.Millisecond),
 	)
