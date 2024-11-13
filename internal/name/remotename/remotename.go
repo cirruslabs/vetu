@@ -43,8 +43,7 @@ func NewFromString(s string) (RemoteName, error) {
 		return RemoteName{}, fmt.Errorf("%w: remote name cannot have both a tag and a digest",
 			ErrFailedToParse)
 	case !isTagged && !isDigested:
-		return RemoteName{}, fmt.Errorf("%w: remote name should either have a tag or a digest",
-			ErrFailedToParse)
+		remoteName.Tag = "latest"
 	case isTagged:
 		remoteName.Tag = tagged.Tag()
 	case isDigested:

@@ -50,9 +50,14 @@ func TestInvalidNoNamespace(t *testing.T) {
 	require.ErrorIs(t, err, remotename.ErrFailedToParse)
 }
 
-func TestInvalidNoTagOrDigest(t *testing.T) {
-	_, err := remotename.NewFromString("ghcr.io/what/ever")
-	require.ErrorIs(t, err, remotename.ErrFailedToParse)
+func TestDefaultToLatestTag(t *testing.T) {
+	parsedRemoteName, err := remotename.NewFromString("ghcr.io/what/ever")
+	require.NoError(t, err)
+	require.Equal(t, remotename.RemoteName{
+		Registry:  "ghcr.io",
+		Namespace: "what/ever",
+		Tag:       "latest",
+	}, parsedRemoteName)
 }
 
 func TestInvalidBothTagAndDigest(t *testing.T) {
