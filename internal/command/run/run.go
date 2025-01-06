@@ -168,6 +168,15 @@ func runRun(cmd *cobra.Command, args []string) error {
 		hvArgs = append(hvArgs, "--device", device)
 	}
 
+	// Reduce VirtIO IOMMU address width from 64 to 39 bits
+	// to avoid Cloud Hypervisor exists due to failed DMA
+	// mappings on amd64[1].
+	//
+	// [1]: https://github.com/cloud-hypervisor/cloud-hypervisor/pull/6900
+	if runtime.GOARCH == "amd64" && len(devices) != 0 {
+		hvArgs = append(hvArgs, "--platform", "iommu_address_width=39")
+	}
+
 	hv, err := cloudhypervisor.CloudHypervisor(cmd.Context(), hvArgs...)
 	if err != nil {
 		return err
