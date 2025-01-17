@@ -113,10 +113,6 @@ func runCreate(cmd *cobra.Command, args []string) error {
 			return struct{}{}, err
 		}
 
-		if local.Exists(localName) {
-			return struct{}{}, fmt.Errorf("VM %q already exists", localName.String())
-		}
-
 		return struct{}{}, local.MoveIn(localName, vmDir)
 	})
 
