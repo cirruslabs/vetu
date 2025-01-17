@@ -1,7 +1,6 @@
 package clone
 
 import (
-	"fmt"
 	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/name"
@@ -104,11 +103,6 @@ func runClone(cmd *cobra.Command, args []string) error {
 	}
 
 	_, err = globallock.With[struct{}](cmd.Context(), func() (struct{}, error) {
-		// Ensure the target VM directory does not exist
-		if local.Exists(dstLocalName) {
-			return struct{}{}, fmt.Errorf("VM %q already exists", dstLocalName)
-		}
-
 		if err := local.MoveIn(dstLocalName, tmpVMDir); err != nil {
 			return struct{}{}, err
 		}
