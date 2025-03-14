@@ -21,7 +21,7 @@ require (
 	github.com/projectcalico/libcalico-go v1.7.3
 	github.com/regclient/regclient v0.7.1
 	github.com/samber/lo v1.46.0
-	github.com/schollz/progressbar/v3 v3.14.5
+	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/seancfoley/ipaddress-go v1.6.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
