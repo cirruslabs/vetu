@@ -32,7 +32,7 @@ require (
 	golang.org/x/term v0.29.0
 	gvisor.dev/gvisor v0.0.0-20240731183317-ba03cb2cbb61
 	inet.af/tcpproxy v0.0.0-20231102063150-2862066fc2a9
-	pault.ag/go/debian v0.16.0
+	pault.ag/go/debian v0.18.0
 )
 
 require (
