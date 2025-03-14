@@ -1,8 +1,7 @@
 module github.com/cirruslabs/vetu
 
 go 1.22.0
-
-toolchain go1.22.5
+toolchain go1.24.1
 
 require (
 	github.com/avast/retry-go/v4 v4.6.0
@@ -27,9 +26,9 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.32.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	golang.org/x/crypto v0.25.0
-	golang.org/x/sys v0.22.0
-	golang.org/x/term v0.22.0
+	golang.org/x/crypto v0.35.0
+	golang.org/x/sys v0.30.0
+	golang.org/x/term v0.29.0
 	gvisor.dev/gvisor v0.0.0-20240731183317-ba03cb2cbb61
 	inet.af/tcpproxy v0.0.0-20231102063150-2862066fc2a9
 	pault.ag/go/debian v0.16.0
@@ -96,9 +95,9 @@ require (
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240730163845-b1a4ccb954bf // indirect
 	google.golang.org/grpc v1.65.0 // indirect
