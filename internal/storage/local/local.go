@@ -1,10 +1,12 @@
 package local
 
 import (
+	"errors"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/homedir"
 	"github.com/cirruslabs/vetu/internal/name/localname"
+	"github.com/cirruslabs/vetu/internal/rename"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/samber/lo"
 	"os"
@@ -28,7 +30,20 @@ func MoveIn(name localname.LocalName, vmDir *vmdirectory.VMDirectory) error {
 		return err
 	}
 
-	return os.Rename(vmDir.Path(), path)
+	if err := os.Rename(vmDir.Path(), path); err != nil {
+		// Handle a case where the target path is a directory
+		if errors.Is(err, os.ErrExist) {
+			if err := rename.Rename(vmDir.Path(), path); err != nil {
+				return err
+			}
+
+			return os.RemoveAll(vmDir.Path())
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func Open(name localname.LocalName) (*vmdirectory.VMDirectory, error) {
