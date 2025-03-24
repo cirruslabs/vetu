@@ -16,7 +16,7 @@ require (
 	github.com/insomniacslk/dhcp v0.0.0-20240710054256-ddd8a41251c9
 	github.com/klauspost/oui v0.0.0-20150225163751-35b4deb627f8
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/otiai10/copy v1.14.0
+	github.com/otiai10/copy v1.14.1
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/projectcalico/libcalico-go v1.7.3
 	github.com/regclient/regclient v0.7.1
@@ -74,6 +74,7 @@ require (
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
+	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
