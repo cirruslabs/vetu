@@ -22,7 +22,7 @@ require (
 	github.com/regclient/regclient v0.8.2
 	github.com/samber/lo v1.49.1
 	github.com/schollz/progressbar/v3 v3.18.0
-	github.com/seancfoley/ipaddress-go v1.7.0
+	github.com/seancfoley/ipaddress-go v1.7.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.36.0
