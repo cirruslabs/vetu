@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.1
 
 require (
-	github.com/avast/retry-go/v4 v4.6.0
+	github.com/avast/retry-go/v4 v4.6.1
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.0.2+incompatible
 	github.com/dustin/go-humanize v1.0.1
