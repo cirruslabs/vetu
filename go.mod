@@ -19,13 +19,13 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/projectcalico/libcalico-go v1.7.3
-	github.com/regclient/regclient v0.8.2
-	github.com/samber/lo v1.49.1
+	github.com/regclient/regclient v0.8.3
+	github.com/samber/lo v1.50.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/seancfoley/ipaddress-go v1.7.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
-	github.com/testcontainers/testcontainers-go v0.36.0
+	github.com/testcontainers/testcontainers-go v0.37.0
 	github.com/vishvananda/netlink v1.3.0
 	golang.org/x/crypto v0.37.0
 	golang.org/x/sys v0.32.0
@@ -59,9 +59,9 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kjk/lzma v0.0.0-20161016003348-3fd93898850d // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20240513124658-fba389f38bae // indirect
-	github.com/magiconair/properties v1.8.9 // indirect
+	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
