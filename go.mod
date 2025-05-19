@@ -9,7 +9,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.1.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
-	github.com/getsentry/sentry-go v0.32.0
+	github.com/getsentry/sentry-go v0.33.0
 	github.com/google/uuid v1.6.0
 	github.com/gosuri/uitable v0.0.4
 	github.com/hashicorp/go-version v1.7.0
