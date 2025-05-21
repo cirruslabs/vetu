@@ -8,7 +8,7 @@ task:
     architecture: arm64
     region: us-east-2
     type: t4g.micro
-  authentication_flow_manager_platform_poetry_cache:
+  authentication_flow_manager_cache:
     folder: test
     fingerprint_script: echo $RANDOM
     populate_script: mkdir -p test && echo $RANDOM > test/random.txt
