@@ -11,5 +11,5 @@ task:
   authentication_flow_manager_cache:
     folder: test
     fingerprint_script: echo $RANDOM
-    populate_script: mkdir -p test && echo $RANDOM > test/random.txt
     optimistically_restore_on_miss: true
+  populate_script: mkdir -p test && echo $RANDOM > test/random.txt
