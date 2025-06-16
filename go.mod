@@ -20,7 +20,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/projectcalico/libcalico-go v1.7.3
 	github.com/regclient/regclient v0.8.3
-	github.com/samber/lo v1.50.0
+	github.com/samber/lo v1.51.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/seancfoley/ipaddress-go v1.7.1
 	github.com/spf13/cobra v1.9.1
