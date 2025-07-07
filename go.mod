@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v28.3.0+incompatible
+	github.com/docker/cli v28.3.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/getsentry/sentry-go v0.34.0
 	github.com/google/uuid v1.6.0
@@ -19,7 +19,7 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/projectcalico/libcalico-go v1.7.3
-	github.com/regclient/regclient v0.8.3
+	github.com/regclient/regclient v0.9.0
 	github.com/samber/lo v1.51.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/seancfoley/ipaddress-go v1.7.1
