@@ -108,7 +108,7 @@ func resizeDisk(vmDir *vmdirectory.VMDirectory, vmConfig *vmconfig.VMConfig) err
 
 	desiredDiskSizeBytes := int64(diskSize) * humanize.GByte
 
-	if actualDiskSizeBytes := diskStat.Size(); desiredDiskSizeBytes <= actualDiskSizeBytes {
+	if actualDiskSizeBytes := diskStat.Size(); desiredDiskSizeBytes < actualDiskSizeBytes {
 		return fmt.Errorf("%w: new disk size of %s should be larger than the current disk size of %s",
 			ErrSet, humanize.Bytes(uint64(desiredDiskSizeBytes)), humanize.Bytes(uint64(actualDiskSizeBytes)))
 	}
