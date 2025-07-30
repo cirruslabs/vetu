@@ -22,9 +22,23 @@ func GetOrFetch(ctx context.Context, fetchFunc FetchFunc, binaryName string, exe
 		return binaryPath, nil
 	}
 
+	// Create a temporary directory on the same filesystem
+	// to avoid rename(2) failing with EXDEV errno due to
+	// "/tmp" being mounted as tmpfs on some systems
+	homeDir, err := homedir.Path()
+	if err != nil {
+		return "", err
+	}
+
+	tmpDir := filepath.Join(homeDir, "tmp")
+
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return "", err
+	}
+
 	// Run the user-provided function to fetch the binary file
 	// if not available in the cache
-	binaryFile, err := os.CreateTemp("", "vetu-binary-file-*")
+	binaryFile, err := os.CreateTemp(tmpDir, "vetu-binary-file-*")
 	if err != nil {
 		return "", err
 	}
