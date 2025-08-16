@@ -1,15 +1,4 @@
-container:
-  image: golang:latest
-
 task:
-  name: Test (non-integration)
-  alias: Tests
-
-  script: go test -v ./...
-
-task:
-  name: Test (integration)
-  alias: Tests
   aws_credentials:
     role_arn: arn:aws:iam::944424729675:role/VetuIntegrationTests
     role_session_name: cirrus
@@ -18,60 +7,9 @@ task:
     image: ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*
     architecture: arm64
     region: us-east-2
-    type: a1.metal
-  install_docker_script:
-    - sudo snap install docker
-  test_script:
-    - wget --no-verbose -O - https://go.dev/dl/go1.21.4.linux-arm64.tar.gz | tar -C /usr/local -xz
-    - export PATH=$PATH:/usr/local/go/bin
-    - go build -o vetu cmd/vetu/main.go
-    - export PATH=$PATH:$(pwd)
-    - sudo setcap cap_net_raw,cap_net_admin+eip vetu
-    - go test -v -tags integration ./...
-  env:
-    HOME: /root
-
-task:
-  name: Release (Dry Run)
-  only_if: $CIRRUS_TAG == ''
-  container:
-    image: golang:latest
-    memory: 8GB
-  depends_on:
-    - Lint
-    - Tests
-  install_script:
-    - echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
-    - apt-get update
-    - apt-get -y install goreleaser-pro
-  release_script: goreleaser build --snapshot
-  goreleaser_artifacts:
-    path: "dist/**"
-
-task:
-  name: Release
-  only_if: $CIRRUS_TAG != ''
-  container:
-    image: golang:latest
-    memory: 8GB
-  depends_on:
-    - Lint
-    - Tests
-  env:
-    GITHUB_TOKEN: ENCRYPTED[!98ace8259c6024da912c14d5a3c5c6aac186890a8d4819fad78f3e0c41a4e0cd3a2537dd6e91493952fb056fa434be7c!]
-    FURY_TOKEN: ENCRYPTED[!97fe4497d9aca60a3d64904883b81e21f19706c6aedda625c97f62f67ec46b8efa74c55699956158bbf0a23726e7d9f6!]
-    GORELEASER_KEY: ENCRYPTED[!9b80b6ef684ceaf40edd4c7af93014ee156c8aba7e6e5795f41c482729887b5c31f36b651491d790f1f668670888d9fd!]
-    SENTRY_ORG: cirrus-labs
-    SENTRY_PROJECT: persistent-workers
-    SENTRY_AUTH_TOKEN: ENCRYPTED[!c16a5cf7da5f856b4bc2f21fe8cb7aa2a6c981f851c094ed4d3025fd02ea59a58a86cee8b193a69a1fc20fa217e56ac3!]
-  install_script:
-    - curl -sL https://sentry.io/get-cli/ | bash
-    - echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
-    - apt-get update
-    - apt-get -y install goreleaser-pro
-  release_script: goreleaser
-  create_sentry_release_script:
-    - export SENTRY_RELEASE="vetu@$CIRRUS_TAG"
-    - sentry-cli releases new $SENTRY_RELEASE
-    - sentry-cli releases set-commits $SENTRY_RELEASE --auto --ignore-missing
-    - sentry-cli releases finalize $SENTRY_RELEASE
+    type: t4g.micro
+  authentication_flow_manager_cache:
+    folder: test
+    fingerprint_script: echo $RANDOM
+    optimistically_restore_on_miss: true
+  populate_script: mkdir -p test && echo $RANDOM > test/random.txt
