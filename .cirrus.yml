@@ -19,6 +19,10 @@ task:
     architecture: arm64
     region: us-east-2
     type: a1.metal
+    block_device_mappings:
+      - device_name: /dev/sda1
+        ebs:
+          volume_size: 100
   install_docker_script:
     - sudo snap install docker
   test_script:
