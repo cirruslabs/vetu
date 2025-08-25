@@ -1,6 +1,6 @@
 module github.com/cirruslabs/vetu
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.1
 
@@ -9,7 +9,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.3.3+incompatible
 	github.com/dustin/go-humanize v1.0.1
-	github.com/getsentry/sentry-go v0.35.0
+	github.com/getsentry/sentry-go v0.35.1
 	github.com/google/uuid v1.6.0
 	github.com/gosuri/uitable v0.0.4
 	github.com/hashicorp/go-version v1.7.0
@@ -19,12 +19,12 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/projectcalico/libcalico-go v1.7.3
-	github.com/regclient/regclient v0.9.0
+	github.com/regclient/regclient v0.9.1
 	github.com/samber/lo v1.51.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/seancfoley/ipaddress-go v1.7.1
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	github.com/testcontainers/testcontainers-go v0.38.0
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/crypto v0.41.0
@@ -86,11 +86,11 @@ require (
 	github.com/seancfoley/bintree v1.3.1 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.5 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/pflag v1.0.7 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect
 	github.com/u-root/uio v0.0.0-20240224005618-d2acac8f3701 // indirect
-	github.com/ulikunitz/xz v0.5.12 // indirect
+	github.com/ulikunitz/xz v0.5.13 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
