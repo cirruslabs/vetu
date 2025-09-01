@@ -19,12 +19,12 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/projectcalico/libcalico-go v1.7.3
-	github.com/regclient/regclient v0.9.1
+	github.com/regclient/regclient v0.9.2
 	github.com/samber/lo v1.51.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/seancfoley/ipaddress-go v1.7.1
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.38.0
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/crypto v0.41.0
@@ -90,7 +90,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect
 	github.com/u-root/uio v0.0.0-20240224005618-d2acac8f3701 // indirect
-	github.com/ulikunitz/xz v0.5.13 // indirect
+	github.com/ulikunitz/xz v0.5.15 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
