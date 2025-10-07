@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
 	"github.com/cirruslabs/vetu/internal/externalcommand/cloudhypervisor"
 	"github.com/cirruslabs/vetu/internal/filelock"
 	"github.com/cirruslabs/vetu/internal/globallock"
@@ -19,15 +25,11 @@ import (
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"time"
 )
 
 var netBridged string
 var netHost bool
+var netHostMTU int
 var devices []string
 
 func NewCommand() *cobra.Command {
@@ -43,6 +45,8 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&netHost, "net-host", false, "use host-networking "+
 		"(assigns the first available /30 subnet from the private IPv4 address space to the "+
 		"\"vetu*\" interface and serves it using the built-in DHCP server to the VM)")
+	cmd.Flags().IntVar(&netHostMTU, "net-host-mtu", 0,
+		"MTU to use for the host-networking interface")
 	cmd.Flags().StringArrayVar(&devices, "device", []string{},
 		"direct device assignment `parameters` to pass to the Cloud Hypervisor command, can be "+
 			"repeated multiple times to attach multiple devices (e.g. "+
@@ -111,7 +115,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 		case netBridged != "":
 			return bridged.New(netBridged)
 		case netHost:
-			return host.New(vmConfig.MACAddress.HardwareAddr)
+			return host.New(vmConfig.MACAddress.HardwareAddr, netHostMTU)
 		default:
 			return software.New(vmConfig.MACAddress.HardwareAddr)
 		}

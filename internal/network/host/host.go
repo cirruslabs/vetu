@@ -5,20 +5,21 @@ package host
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
+	"time"
+
 	"github.com/cirruslabs/vetu/internal/network/subnetfinder"
 	"github.com/cirruslabs/vetu/internal/tuntap"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
-	"net"
-	"os"
-	"time"
 )
 
 type Network struct {
 	tapFile *os.File
 }
 
-func New(vmHardwareAddr net.HardwareAddr) (*Network, error) {
+func New(vmHardwareAddr net.HardwareAddr, mtu int) (*Network, error) {
 	// Create a TAP interface
 	tapName, tapFile, err := tuntap.CreateTAP("vetu%d", unix.IFF_VNET_HDR)
 	if err != nil {
@@ -30,6 +31,13 @@ func New(vmHardwareAddr net.HardwareAddr) (*Network, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find the TAP interface %q that we've just created: %v",
 			tapName, err)
+	}
+
+	// Set the MTU of the TAP interface
+	if mtu != 0 {
+		if err := netlink.LinkSetMTU(tapLink, mtu); err != nil {
+			return nil, err
+		}
 	}
 
 	// Bring the TAP interface up
