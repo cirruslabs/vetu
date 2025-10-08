@@ -12,7 +12,7 @@ var ErrNotSupported = errors.New("host networking is not supported on this platf
 
 type Network struct{}
 
-func New(_ net.HardwareAddr) (*Network, error) {
+func New(_ net.HardwareAddr, _ int) (*Network, error) {
 	return nil, ErrNotSupported
 }
 
