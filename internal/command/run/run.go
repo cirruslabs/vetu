@@ -42,11 +42,11 @@ func NewCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&netBridged, "net-bridged", "", "specify a bridge interface "+
 		"to attach the VM to instead of using the software TCP/IP stack by default")
-	cmd.Flags().BoolVar(&netHost, "net-host", false, "use host-networking "+
+	cmd.Flags().BoolVar(&netHost, "net-host", false, "use host networking "+
 		"(assigns the first available /30 subnet from the private IPv4 address space to the "+
 		"\"vetu*\" interface and serves it using the built-in DHCP server to the VM)")
 	cmd.Flags().IntVar(&netHostMTU, "net-host-mtu", 0,
-		"MTU to use for the host-networking interface")
+		"MTU to use for the host networking interface")
 	cmd.Flags().StringArrayVar(&devices, "device", []string{},
 		"direct device assignment `parameters` to pass to the Cloud Hypervisor command, can be "+
 			"repeated multiple times to attach multiple devices (e.g. "+
