@@ -123,7 +123,11 @@ func runRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to initialize VM's network: %v", err)
 	}
-	defer network.Close()
+	defer func() {
+		if err := network.Close(); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "failed to close network: %v\n", err)
+		}
+	}()
 
 	// Kernel
 	hvArgs := []string{"--console", "pty", "--serial", "tty", "--kernel", vmDir.KernelPath()}

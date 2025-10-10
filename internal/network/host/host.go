@@ -17,6 +17,7 @@ import (
 
 type Network struct {
 	tapFile *os.File
+	network net.IPNet
 }
 
 func New(vmHardwareAddr net.HardwareAddr, mtu int) (*Network, error) {
@@ -93,7 +94,8 @@ func New(vmHardwareAddr net.HardwareAddr, mtu int) (*Network, error) {
 	}()
 
 	return &Network{
-		tapFile,
+		tapFile: tapFile,
+		network: network,
 	}, nil
 }
 
@@ -106,5 +108,20 @@ func (network *Network) Tap() *os.File {
 }
 
 func (network *Network) Close() error {
+	var srcFilter netlink.ConntrackFilter
+	if err := srcFilter.AddIPNet(netlink.ConntrackOrigSrcIP, &network.network); err != nil {
+		return fmt.Errorf("failed to add IP network to an source conntrack filter: %w", err)
+	}
+
+	var dstFilter netlink.ConntrackFilter
+	if err := srcFilter.AddIPNet(netlink.ConntrackOrigDstIP, &network.network); err != nil {
+		return fmt.Errorf("failed to add IP network to an destination conntrack filter: %w", err)
+	}
+
+	_, err := netlink.ConntrackDeleteFilters(netlink.ConntrackTable, unix.AF_INET, &srcFilter, &dstFilter)
+	if err != nil {
+		return fmt.Errorf("failed to delete conntrack entries: %w", err)
+	}
+
 	return nil
 }
