@@ -6,6 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strconv"
+	"time"
+
 	"github.com/cirruslabs/vetu/internal/randommac"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/adapters/gonet"
@@ -19,8 +23,6 @@ import (
 	"gvisor.dev/gvisor/pkg/tcpip/transport/udp"
 	"gvisor.dev/gvisor/pkg/waiter"
 	"inet.af/tcpproxy"
-	"net"
-	"time"
 )
 
 const nicID = 1
@@ -146,8 +148,10 @@ func (gvisor *GVisor) forwardTCP(request *tcp.ForwarderRequest) {
 
 	guestConn := gonet.NewTCPConn(&wq, ep)
 
-	remoteConn, err := net.Dial("tcp", fmt.Sprintf("%s:%d",
-		request.ID().LocalAddress.String(), request.ID().LocalPort))
+	hostPort := net.JoinHostPort(request.ID().LocalAddress.String(),
+		strconv.FormatUint(uint64(request.ID().LocalPort), 10))
+
+	remoteConn, err := net.Dial("tcp", hostPort)
 	if err != nil {
 		request.Complete(true)
 
@@ -177,8 +181,10 @@ func (gvisor *GVisor) forwardUDP(request *udp.ForwarderRequest) {
 
 	guestConn := gonet.NewUDPConn(&wq, ep)
 
-	remoteConn, err := net.Dial("udp", fmt.Sprintf("%s:%d",
-		request.ID().LocalAddress.String(), request.ID().LocalPort))
+	hostPort := net.JoinHostPort(request.ID().LocalAddress.String(),
+		strconv.FormatUint(uint64(request.ID().LocalPort), 10))
+
+	remoteConn, err := net.Dial("udp", hostPort)
 	if err != nil {
 		return
 	}
