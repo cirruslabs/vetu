@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/avast/retry-go/v4 v4.7.0
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v29.1.1+incompatible
+	github.com/docker/cli v29.1.2+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/getsentry/sentry-go v0.40.0
 	github.com/google/uuid v1.6.0
@@ -19,11 +19,11 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/projectcalico/libcalico-go v1.7.3
-	github.com/regclient/regclient v0.10.0
+	github.com/regclient/regclient v0.11.1
 	github.com/samber/lo v1.52.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/seancfoley/ipaddress-go v1.7.1
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/vishvananda/netlink v1.3.1
@@ -60,7 +60,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kjk/lzma v0.0.0-20161016003348-3fd93898850d // indirect
-	github.com/klauspost/compress v1.18.1 // indirect
+	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/lufia/plan9stats v0.0.0-20240513124658-fba389f38bae // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
