@@ -17,11 +17,11 @@ require (
 	github.com/klauspost/oui v0.0.0-20150225163751-35b4deb627f8
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/otiai10/copy v1.14.1
-	github.com/pierrec/lz4/v4 v4.1.22
+	github.com/pierrec/lz4/v4 v4.1.23
 	github.com/projectcalico/libcalico-go v1.7.3
 	github.com/regclient/regclient v0.11.1
 	github.com/samber/lo v1.52.0
-	github.com/schollz/progressbar/v3 v3.18.0
+	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/seancfoley/ipaddress-go v1.7.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
