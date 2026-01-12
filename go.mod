@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/avast/retry-go/v4 v4.7.0
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v29.1.3+incompatible
+	github.com/docker/cli v29.1.4+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/getsentry/sentry-go v0.40.0
 	github.com/google/uuid v1.6.0
@@ -28,8 +28,8 @@ require (
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/crypto v0.46.0
-	golang.org/x/sys v0.39.0
-	golang.org/x/term v0.38.0
+	golang.org/x/sys v0.40.0
+	golang.org/x/term v0.39.0
 	gvisor.dev/gvisor v0.0.0-20240731183317-ba03cb2cbb61
 	inet.af/tcpproxy v0.0.0-20231102063150-2862066fc2a9
 	pault.ag/go/debian v0.19.0
