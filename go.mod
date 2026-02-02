@@ -7,9 +7,9 @@ toolchain go1.24.1
 require (
 	github.com/avast/retry-go/v4 v4.7.0
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v29.1.5+incompatible
+	github.com/docker/cli v29.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.1
-	github.com/getsentry/sentry-go v0.41.0
+	github.com/getsentry/sentry-go v0.42.0
 	github.com/google/uuid v1.6.0
 	github.com/gosuri/uitable v0.0.4
 	github.com/hashicorp/go-version v1.8.0
