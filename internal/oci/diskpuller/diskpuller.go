@@ -124,11 +124,14 @@ func PullDisks(
 
 	// Since we've finished with pulling disks,
 	// we can finish the associated progress bar
-	if err := progressBar.Finish(); err != nil {
-		return err
+	finishErr := progressBar.Finish()
+
+	// Prefer diskTasksErr over finishErr
+	if diskTasksErr != nil {
+		return diskTasksErr
 	}
 
-	return diskTasksErr
+	return finishErr
 }
 
 func (diskTask *diskTask) process(
