@@ -42,7 +42,7 @@ func PullDisks(
 ) error {
 	// Process VM's disks by converting them into
 	// disk tasks for further parallel processing
-	diskTasks := make([]*diskTask, len(disks))
+	var diskTasks []*diskTask
 	diskNameToOffset := map[string]int64{}
 
 	for _, disk := range disks {
