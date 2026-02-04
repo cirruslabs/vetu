@@ -3,6 +3,7 @@ package diskpuller
 import (
 	"context"
 	"fmt"
+
 	"github.com/cirruslabs/vetu/internal/sparseio"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/dustin/go-humanize"
@@ -11,11 +12,12 @@ import (
 	"github.com/regclient/regclient/types/ref"
 	"github.com/samber/lo"
 	"github.com/schollz/progressbar/v3"
+	"golang.org/x/sync/errgroup"
+
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
-	"sync"
 )
 
 type NameFromDiskDescriptorFunc func(diskDescriptor descriptor.Descriptor) (string, error)
@@ -40,7 +42,7 @@ func PullDisks(
 ) error {
 	// Process VM's disks by converting them into
 	// disk tasks for further parallel processing
-	diskTaskCh := make(chan *diskTask, len(disks))
+	var diskTasks []*diskTask
 	diskNameToOffset := map[string]int64{}
 
 	for _, disk := range disks {
@@ -60,17 +62,14 @@ func PullDisks(
 			return err
 		}
 
-		diskTaskCh <- &diskTask{
+		diskTasks = append(diskTasks, &diskTask{
 			Desc:   disk,
 			Path:   filepath.Join(vmDir.Path(), diskName),
 			Offset: diskNameToOffset[diskName],
-		}
+		})
 
 		diskNameToOffset[diskName] += uncompressedSize
 	}
-
-	// There will be no more disk tasks
-	close(diskTaskCh)
 
 	// Pre-create and truncate disk files
 	for diskName, offset := range diskNameToOffset {
@@ -88,7 +87,7 @@ func PullDisks(
 		}
 	}
 
-	// Process disk tasks with the specified concurrency
+	// Indicate that we're started pulling and show the progress bar
 	totalUncompressedDisksSizeBytes := lo.Sum(lo.Values(diskNameToOffset))
 	totalCompressedDisksSizeBytes := lo.Sum(lo.Map(disks, func(diskDesc descriptor.Descriptor, index int) int64 {
 		return diskDesc.Size
@@ -105,48 +104,34 @@ func PullDisks(
 		progressBar = progressbar.DefaultBytesSilent(-1)
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(concurrency)
+	// Process disk tasks with the specified concurrency
+	diskTasksGroup, diskTasksCtx := errgroup.WithContext(ctx)
 
-	diskTasksErrCh := make(chan error, concurrency)
+	diskTasksGroup.SetLimit(concurrency)
 
-	diskTasksCtx, diskTasksCtxCancel := context.WithCancel(ctx)
-	defer diskTasksCtxCancel()
+	for _, diskTask := range diskTasks {
+		if diskTasksCtx.Err() != nil {
+			break
+		}
 
-	for i := 0; i < concurrency; i++ {
-		go func() {
-			defer wg.Done()
-
-			for {
-				diskTask, ok := <-diskTaskCh
-				if !ok {
-					return
-				}
-
-				if err := diskTask.process(diskTasksCtx, client, reference, progressBar, initializeDecompressor); err != nil {
-					diskTasksErrCh <- err
-					diskTasksCtxCancel()
-				}
-			}
-		}()
+		diskTasksGroup.Go(func() error {
+			return diskTask.process(diskTasksCtx, client, reference, progressBar, initializeDecompressor)
+		})
 	}
 
 	// Wait for the disk tasks to finish
-	wg.Wait()
+	diskTasksErr := diskTasksGroup.Wait()
 
 	// Since we've finished with pulling disks,
 	// we can finish the associated progress bar
-	if err := progressBar.Finish(); err != nil {
-		return err
+	finishErr := progressBar.Finish()
+
+	// Prefer diskTasksErr over finishErr
+	if diskTasksErr != nil {
+		return diskTasksErr
 	}
 
-	// Check for errors
-	select {
-	case err := <-diskTasksErrCh:
-		return err
-	default:
-		return nil
-	}
+	return finishErr
 }
 
 func (diskTask *diskTask) process(
