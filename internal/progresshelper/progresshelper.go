@@ -8,7 +8,7 @@ import (
 	"golang.org/x/term"
 )
 
-const terminalThrottleDuration = 5 * time.Second
+const nonTerminalThrottleDuration = 5 * time.Second
 
 func DefaultBytes(maxBytes int64, description ...string) *progressbar.ProgressBar {
 	progressBar := progressbar.DefaultBytes(maxBytes, description...)
@@ -31,5 +31,5 @@ func applyNonTerminalOpts(progressBar *progressbar.ProgressBar) {
 		return
 	}
 
-	progressbar.OptionThrottle(terminalThrottleDuration)(progressBar)
+	progressbar.OptionThrottle(nonTerminalThrottleDuration)(progressBar)
 }
