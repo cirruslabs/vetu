@@ -1,0 +1,19 @@
+on:
+  push:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64:24.04-md
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Build Vetu
+        run: |
+          go build -o vetu cmd/vetu/main.go
+          sudo setcap cap_net_raw,cap_net_admin+eip vetu
+          echo "$(pwd)" >> "$GITHUB_PATH"
+      - name: Run tests
+        run: go test -v -tags integration ./...

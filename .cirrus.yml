@@ -2,40 +2,6 @@ container:
   image: golang:latest
 
 task:
-  name: Test (non-integration)
-  alias: Tests
-
-  script: go test -v ./...
-
-task:
-  name: Test (integration)
-  alias: Tests
-  aws_credentials:
-    role_arn: arn:aws:iam::944424729675:role/VetuIntegrationTests
-    role_session_name: cirrus
-    region: us-east-2
-  ec2_instance:
-    image: ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*
-    architecture: arm64
-    region: us-east-2
-    type: a1.metal
-    block_device_mappings:
-      - device_name: /dev/sda1
-        ebs:
-          volume_size: 100
-  install_docker_script:
-    - sudo snap install docker
-  test_script:
-    - wget --no-verbose -O - https://go.dev/dl/go1.21.4.linux-arm64.tar.gz | tar -C /usr/local -xz
-    - export PATH=$PATH:/usr/local/go/bin
-    - go build -o vetu cmd/vetu/main.go
-    - export PATH=$PATH:$(pwd)
-    - sudo setcap cap_net_raw,cap_net_admin+eip vetu
-    - go test -v -tags integration ./...
-  env:
-    HOME: /root
-
-task:
   name: Release (Dry Run)
   only_if: $CIRRUS_TAG == ''
   container:
@@ -43,7 +9,6 @@ task:
     memory: 8GB
   depends_on:
     - Lint
-    - Tests
   install_script:
     - echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
     - apt-get update
@@ -60,7 +25,6 @@ task:
     memory: 8GB
   depends_on:
     - Lint
-    - Tests
   env:
     GITHUB_TOKEN: ENCRYPTED[!98ace8259c6024da912c14d5a3c5c6aac186890a8d4819fad78f3e0c41a4e0cd3a2537dd6e91493952fb056fa434be7c!]
     FURY_TOKEN: ENCRYPTED[!97fe4497d9aca60a3d64904883b81e21f19706c6aedda625c97f62f67ec46b8efa74c55699956158bbf0a23726e7d9f6!]

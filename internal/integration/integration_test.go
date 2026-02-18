@@ -78,7 +78,7 @@ func TestRunAndSSH(t *testing.T) {
 	vmName := fmt.Sprintf("integration-test-run-and-ssh-%s", uuid.NewString())
 
 	// Instantiate a VM with admin:admin SSH access
-	_, _, err := vetu("clone", "ghcr.io/cirruslabs/debian:latest", vmName)
+	_, _, err := vetu("clone", "ghcr.io/cirruslabs/ubuntu-runner-amd64:latest", vmName)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_, _, _ = vetu("delete", vmName)
