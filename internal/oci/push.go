@@ -5,9 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"io"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strconv"
+
 	chunkerpkg "github.com/cirruslabs/vetu/internal/chunker"
 	"github.com/cirruslabs/vetu/internal/oci/annotations"
 	"github.com/cirruslabs/vetu/internal/oci/mediatypes"
+	"github.com/cirruslabs/vetu/internal/progresshelper"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/dustin/go-humanize"
 	"github.com/opencontainers/go-digest"
@@ -19,13 +27,9 @@ import (
 	"github.com/regclient/regclient/types/mediatype"
 	"github.com/regclient/regclient/types/oci/v1"
 	"github.com/regclient/regclient/types/platform"
+
 	"github.com/regclient/regclient/types/ref"
 	"github.com/schollz/progressbar/v3"
-	"io"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strconv"
 )
 
 const targetDiskLayerSizeBytes = 500 * humanize.MByte
@@ -234,7 +238,7 @@ func pushDisk(
 		errCh <- nil
 	}()
 
-	progressBar := progressbar.DefaultBytes(-1)
+	progressBar := progresshelper.DefaultBytes(-1)
 
 	for compressedChunk := range chunker.Chunks() {
 		annotations := map[string]string{

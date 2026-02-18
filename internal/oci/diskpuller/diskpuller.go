@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cirruslabs/vetu/internal/progresshelper"
 	"github.com/cirruslabs/vetu/internal/sparseio"
 	"github.com/cirruslabs/vetu/internal/vmdirectory"
 	"github.com/dustin/go-humanize"
@@ -99,7 +100,7 @@ func PullDisks(
 	var progressBar *progressbar.ProgressBar
 
 	if totalCompressedDisksSizeBytes > 0 {
-		progressBar = progressbar.DefaultBytes(totalCompressedDisksSizeBytes)
+		progressBar = progresshelper.DefaultBytes(totalCompressedDisksSizeBytes)
 	} else {
 		progressBar = progressbar.DefaultBytesSilent(-1)
 	}
