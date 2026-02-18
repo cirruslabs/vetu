@@ -15,7 +15,5 @@ jobs:
           go build -o vetu cmd/vetu/main.go
           sudo setcap cap_net_raw,cap_net_admin+eip vetu
           echo "$(pwd)" >> "$GITHUB_PATH"
-      - name: Run tests (non-integration)
-        run: go test -v ./...
-      - name: Run tests (integration)
+      - name: Run tests
         run: go test -v -tags integration ./...
