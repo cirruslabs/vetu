@@ -102,7 +102,7 @@ func PullDisks(
 	if totalCompressedDisksSizeBytes > 0 {
 		progressBar = progresshelper.DefaultBytes(totalCompressedDisksSizeBytes)
 	} else {
-		progressBar = progressbar.DefaultBytesSilent(-1)
+		progressBar = progresshelper.DefaultBytesSilent(-1)
 	}
 
 	// Process disk tasks with the specified concurrency
