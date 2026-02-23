@@ -146,7 +146,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 	// Disks
 	diskArguments := lo.Map(vmConfig.Disks, func(disk vmconfig.Disk, index int) string {
 		path := filepath.Join(vmDir.Path(), disk.Name)
-		return fmt.Sprintf("path=%s", path)
+		return fmt.Sprintf("path=%s,image_type=raw", path)
 	})
 	if len(diskArguments) != 0 {
 		hvArgs = append(hvArgs, "--disk")
