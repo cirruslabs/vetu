@@ -1,7 +1,10 @@
 package list
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/cirruslabs/vetu/internal/globallock"
 	"github.com/cirruslabs/vetu/internal/storage/local"
 	"github.com/cirruslabs/vetu/internal/storage/remote"
@@ -12,13 +15,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type desiredSource struct {
+type Source struct {
 	Name     string
 	ListFunc func() ([]lo.Tuple2[string, *vmdirectory.VMDirectory], error)
 }
 
+type VMInfo struct {
+	Name    string
+	Source  string
+	State   string
+	Running bool
+	Disk    uint64
+}
+
 var source string
 var quiet bool
+var format string
 
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -31,25 +43,26 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringVar(&source, "source", "",
 		"only display VMs from the specified source (e.g. --source local or --source oci)")
 	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "only display VM names")
+	cmd.Flags().StringVar(&format, "format", "text", "output format, either \"text\" or \"json\"")
 
 	return cmd
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	var desiredSources []desiredSource
+	var desiredSources []Source
 
 	// Support --source
 	switch source {
 	case "local":
 		desiredSources = append(desiredSources,
-			desiredSource{"local", local.List})
+			Source{"local", local.List})
 	case "oci":
 		desiredSources = append(desiredSources,
-			desiredSource{"oci", remote.List})
+			Source{"OCI", remote.List})
 	case "":
 		desiredSources = append(desiredSources,
-			desiredSource{"local", local.List},
-			desiredSource{"oci", remote.List})
+			Source{"local", local.List},
+			Source{"OCI", remote.List})
 	default:
 		return fmt.Errorf("cannot display VMs from an unsupported source %q", source)
 	}
@@ -72,16 +85,17 @@ func runList(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	table := uitable.New()
+	// Retrieve VM infos from each desired source under a global lock
+	var vmInfos []VMInfo
 
-	table.AddRow("Source", "Name", "Size", "State")
-
-	// Retrieve VMs metadata under a global lock
 	_, err := globallock.With(cmd.Context(), func() (struct{}, error) {
 		for _, desiredSource := range desiredSources {
-			if err := addVMsToTable(table, desiredSource); err != nil {
+			vmInfosLocal, err := vmInfosForSource(desiredSource)
+			if err != nil {
 				return struct{}{}, err
 			}
+
+			vmInfos = append(vmInfos, vmInfosLocal...)
 		}
 
 		return struct{}{}, nil
@@ -90,27 +104,59 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println(table.String())
+	// Render VM infos depending on the requested format
+	switch format {
+	case "text":
+		table := uitable.New()
+
+		table.AddRow("Source", "Name", "Disk", "State")
+
+		for _, vmInfo := range vmInfos {
+			table.AddRow(vmInfo.Source, vmInfo.Name, vmInfo.Disk, vmInfo.State)
+		}
+
+		fmt.Println(table.String())
+	case "json":
+		encoder := json.NewEncoder(os.Stdout)
+
+		encoder.SetIndent("", "  ")
+
+		if err := encoder.Encode(vmInfos); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("cannot display VMs in an unsupported format %q", format)
+	}
 
 	return nil
 }
 
-func addVMsToTable(table *uitable.Table, desiredSource desiredSource) error {
-	vms, err := desiredSource.ListFunc()
+func vmInfosForSource(source Source) ([]VMInfo, error) {
+	var vmInfos []VMInfo
+
+	vms, err := source.ListFunc()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, vm := range vms {
 		name, vmDir := lo.Unpack2(vm)
 
-		size, err := vmDir.Size()
+		diskSizeBytes, err := vmDir.Size()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		table.AddRow(desiredSource.Name, name, humanize.Bytes(size), vmDir.State())
+		state := vmDir.State()
+
+		vmInfos = append(vmInfos, VMInfo{
+			Name:    name,
+			Source:  source.Name,
+			State:   string(state),
+			Running: state == vmdirectory.StateRunning,
+			Disk:    diskSizeBytes / humanize.GByte,
+		})
 	}
 
-	return nil
+	return vmInfos, nil
 }
