@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/avast/retry-go/v4 v4.7.0
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v29.2.1+incompatible
+	github.com/docker/cli v29.3.0+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/getsentry/sentry-go v0.43.0
 	github.com/google/uuid v1.6.0
@@ -15,10 +15,10 @@ require (
 	github.com/klauspost/oui v0.0.0-20150225163751-35b4deb627f8
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/otiai10/copy v1.14.1
-	github.com/pierrec/lz4/v4 v4.1.25
+	github.com/pierrec/lz4/v4 v4.1.26
 	github.com/projectcalico/libcalico-go v1.7.3
 	github.com/regclient/regclient v0.11.2
-	github.com/samber/lo v1.52.0
+	github.com/samber/lo v1.53.0
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/seancfoley/ipaddress-go v1.7.1
 	github.com/spf13/cobra v1.10.2
@@ -26,8 +26,8 @@ require (
 	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/vishvananda/netlink v1.3.1
 	golang.org/x/crypto v0.48.0
-	golang.org/x/sync v0.19.0
-	golang.org/x/sys v0.41.0
+	golang.org/x/sync v0.20.0
+	golang.org/x/sys v0.42.0
 	golang.org/x/term v0.40.0
 	gvisor.dev/gvisor v0.0.0-20240731183317-ba03cb2cbb61
 	inet.af/tcpproxy v0.0.0-20231102063150-2862066fc2a9
