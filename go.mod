@@ -5,9 +5,9 @@ go 1.25.0
 require (
 	github.com/avast/retry-go/v4 v4.7.0
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v29.3.0+incompatible
+	github.com/docker/cli v29.3.1+incompatible
 	github.com/dustin/go-humanize v1.0.1
-	github.com/getsentry/sentry-go v0.43.0
+	github.com/getsentry/sentry-go v0.44.1
 	github.com/google/uuid v1.6.0
 	github.com/gosuri/uitable v0.0.4
 	github.com/hashicorp/go-version v1.8.0
