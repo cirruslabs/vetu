@@ -85,9 +85,6 @@ jobs:
       FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
       GITHUB_TOKEN: ${{ github.token }}
       GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG: cirrus-labs
-      SENTRY_PROJECT: persistent-workers
     steps:
       - uses: actions/checkout@v5
         with:
@@ -97,15 +94,8 @@ jobs:
           go-version: stable
       - name: Install tools
         run: |
-          curl -sL https://sentry.io/get-cli/ | bash
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
           sudo apt-get update
           sudo apt-get -y install goreleaser-pro
       - name: Release
         run: goreleaser
-      - name: Create Sentry release
-        run: |
-          SENTRY_RELEASE="vetu@${GITHUB_REF_NAME}"
-          sentry-cli releases new "$SENTRY_RELEASE"
-          sentry-cli releases set-commits "$SENTRY_RELEASE" --auto --ignore-missing
-          sentry-cli releases finalize "$SENTRY_RELEASE"
