@@ -1,3 +1,5 @@
+version: 2
+
 project_name: vetu
 
 before:
@@ -19,26 +21,11 @@ builds:
 
 archives:
   - id: binary
-    format: binary
+    formats:
+      - binary
     name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
   - id: regular
     name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
 
 release:
   prerelease: auto
-
-nfpms:
-  - package_name: vetu
-    vendor: Cirrus Labs, Inc.
-    homepage: https://github.com/cirruslabs/vetu
-    maintainer: support@cirruslabs.org
-    description: CLI for executing Cirrus tasks locally and in any CI
-    section: misc
-    scripts:
-      postinstall: "scripts/postinstall.sh"
-    formats:
-      - deb
-      - rpm
-
-furies:
-  - account: cirruslabs

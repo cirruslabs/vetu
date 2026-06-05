@@ -14,8 +14,6 @@ Here are just some of the cool features that Vetu inherited from Tart:
 
 ## Installation
 
-* [Debian-based distributions](INSTALL.md#debian-based-distributions) (Debian, Ubuntu, etc.)
-* [RPM-based distributions](INSTALL.md#rpm-based-distributions) (Fedora, CentOS, etc.)
 * [Prebuilt Binary](INSTALL.md#prebuilt-binary)
 * [From Source](INSTALL.md#from-source)
 
