@@ -1,7 +1,5 @@
 # Index
 
-* [Debian-based distributions](#debian-based-distributions) (Debian, Ubuntu, etc.)
-* [RPM-based distributions](#rpm-based-distributions) (Fedora, CentOS, etc.)
 * [Prebuilt Binary](#prebuilt-binary)
 * [From Source](#from-source)
 
@@ -17,52 +15,22 @@ Once added to a group, you will need to re-login for the changes to take effect.
 
 ## Installation
 
-## Debian-based distributions
-
-First, make sure that you've installed the APT transport for downloading packages via HTTPS and common X.509 certificates:
-
-```shell
-sudo apt-get update && sudo apt-get -y install apt-transport-https ca-certificates
-```
-
-Then, add the Cirrus Labs repository:
-
-```shell
-echo "deb [trusted=yes] https://apt.fury.io/cirruslabs/ /" | sudo tee /etc/apt/sources.list.d/cirruslabs.list
-```
-
-Now you can update the package index files and install the Vetu:
-
-```shell
-sudo apt-get update && sudo apt-get -y install vetu
-```
-
-## RPM-based distributions
-
-First, create a `/etc/yum.repos.d/cirruslabs.repo` file with the following contents:
-
-```
-[cirruslabs]
-name=Cirrus Labs Repo
-baseurl=https://yum.fury.io/cirruslabs/
-enabled=1
-gpgcheck=0
-```
-
-Now you can install the Vetu:
-
-```shell
-sudo yum -y install vetu
-```
-
 ## Prebuilt Binary
 
-Check the [releases page](https://github.com/cirruslabs/vetu/releases) for a pre-built `vetu` binary for your platform.
+Check the [releases page](https://github.com/openai/vetu/releases) for a pre-built `vetu` binary for your platform.
 
 Here's a one-liner for Linux to download the latest release:
 
 ```bash
-curl -L -o vetu https://github.com/cirruslabs/vetu/releases/latest/download/vetu-linux-$(uname -m) && sudo mv vetu /usr/bin/vetu && sudo chmod +x /usr/bin/vetu && sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/vetu
+arch="$(uname -m)"
+case "$arch" in
+  x86_64) arch=amd64 ;;
+  aarch64 | arm64) arch=arm64 ;;
+  *) echo "Unsupported architecture: $arch" >&2; exit 1 ;;
+esac
+curl -L -o vetu "https://github.com/openai/vetu/releases/latest/download/vetu-linux-$arch"
+sudo install -m 0755 vetu /usr/bin/vetu
+sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/vetu
 ```
 
 ## From Source
@@ -70,7 +38,7 @@ curl -L -o vetu https://github.com/cirruslabs/vetu/releases/latest/download/vetu
 If you have [Golang](https://golang.org/) 1.21 or newer installed, you can run:
 
 ```
-go install github.com/cirruslabs/vetu/...@latest
+go install github.com/cirruslabs/vetu/cmd/vetu@latest
 ```
 
 This will build and place the `vetu` binary in `$GOPATH/bin`.

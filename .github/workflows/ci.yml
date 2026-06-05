@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  merge_group:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.0
+
+  test:
+    name: Test
+    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64:24.04-md
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build Vetu
+        run: |
+          go build -o vetu cmd/vetu/main.go
+          sudo setcap cap_net_raw,cap_net_admin+eip vetu
+          echo "$PWD" >> "$GITHUB_PATH"
+      - name: Run tests
+        run: go test -v -tags integration ./...
+
+  release-dry-run:
+    name: Release (Dry Run)
+    needs:
+      - lint
+      - test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser-pro
+          version: "~> v2"
+          args: release --skip=publish --snapshot --clean
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: vetu-snapshot
+          path: dist/**
