@@ -1,12 +1,38 @@
+name: CI
+
 on:
+  pull_request:
   push:
+    branches:
+      - main
+    tags:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+      - name: Lint
+        run: golangci-lint run
+
   test:
     name: Test
-    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64:24.04-md
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         with:
           go-version: stable
@@ -17,3 +43,59 @@ jobs:
           echo "$(pwd)" >> "$GITHUB_PATH"
       - name: Run tests
         run: go test -v -tags integration ./...
+
+  release_dry_run:
+    name: Release (Dry Run)
+    if: github.event_name != 'pull_request' && github.ref_type != 'tag'
+    needs:
+      - lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install GoReleaser
+        run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt-get update
+          sudo apt-get -y install goreleaser-pro
+      - name: Build snapshot
+        run: goreleaser build --snapshot
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-dry-run
+          path: dist/**
+          if-no-files-found: ignore
+
+  release:
+    name: Release
+    if: github.ref_type == 'tag'
+    needs:
+      - lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
+      GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install tools
+        run: |
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+          sudo apt-get update
+          sudo apt-get -y install goreleaser-pro
+      - name: Release
+        run: goreleaser
