@@ -140,6 +140,11 @@ func TestRunAndExec(t *testing.T) {
 			t.Fatalf("expected an *exec.ExitError, got %T: %v", err, err)
 		}
 
+		// Verify executing a command with flags without the "--" separator works correctly
+		stdout, _, err := vetu("exec", vmName, "echo", "-n", "no-newline")
+		require.NoError(t, err)
+		require.Equal(t, "no-newline", stdout)
+
 		// Terminate the VM by stopping it
 		_, _, err = vetu("stop", vmName)
 		require.NoError(t, err)

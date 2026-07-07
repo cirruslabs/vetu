@@ -46,6 +46,7 @@ func NewCommand() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Attach host's standard input to a remote command")
 	cmd.Flags().BoolVarP(&tty, "tty", "t", false, "Allocate a remote pseudo-terminal (PTY)")
+	cmd.Flags().SetInterspersed(false)
 
 	return cmd
 }
@@ -54,6 +55,14 @@ func runExec(cmd *cobra.Command, args []string) error {
 	name := args[0]
 	commandName := args[1]
 	commandArgs := args[2:]
+
+	if commandName == "--" {
+		if len(commandArgs) == 0 {
+			return errors.New("must specify a command to execute")
+		}
+		commandName = commandArgs[0]
+		commandArgs = commandArgs[1:]
+	}
 
 	localName, err := localname.NewFromString(name)
 	if err != nil {
