@@ -103,6 +103,82 @@ func TestRunAndSSH(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// TestRunAndExec ensures that "vetu run" starts VMs with vsock enabled
+// and that "vetu exec" can connect and execute commands inside the VM.
+func TestRunAndExec(t *testing.T) {
+	vmName := fmt.Sprintf("exec-%s", uuid.NewString())
+
+	// Clone the VM image
+	_, _, err := vetu("clone", "ghcr.io/cirruslabs/ubuntu-runner-amd64:latest", vmName)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_, _, _ = vetu("delete", vmName)
+	})
+
+	go func() {
+		// Periodically try to execute a command over vetu exec
+		err = retry.Do(func() error {
+			stdout, _, err := vetu("exec", vmName, "--", "echo", "hello world")
+			if err != nil {
+				return err
+			}
+			if strings.TrimSpace(stdout) != "hello world" {
+				return fmt.Errorf("unexpected output: %q", stdout)
+			}
+			return nil
+		}, retry.Attempts(0), retry.Delay(time.Second), retry.DelayType(retry.FixedDelay))
+		require.NoError(t, err)
+
+		// Verify a failing command returns a non-zero exit code
+		_, _, err = vetu("exec", vmName, "--", "false")
+		require.Error(t, err)
+
+		// Terminate the VM by stopping it
+		_, _, err = vetu("stop", vmName)
+		require.NoError(t, err)
+	}()
+
+	// Run the VM until it is stopped by our goroutine
+	_, _, err = vetu("run", vmName)
+	require.NoError(t, err)
+}
+
+// TestRunAndExecStdoutStderr ensures stdout and stderr are separated.
+func TestRunAndExecStdoutStderr(t *testing.T) {
+	vmName := fmt.Sprintf("exec-std-%s", uuid.NewString())
+
+	_, _, err := vetu("clone", "ghcr.io/cirruslabs/ubuntu-runner-amd64:latest", vmName)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_, _, _ = vetu("delete", vmName)
+	})
+
+	go func() {
+		err = retry.Do(func() error {
+			stdout, stderr, err := vetu("exec", vmName, "--", "sh", "-c", "echo stdout_msg; echo stderr_msg >&2")
+			if err != nil {
+				return err
+			}
+			if !strings.Contains(stdout, "stdout_msg") {
+				return fmt.Errorf("missing stdout message, got: %q", stdout)
+			}
+			if !strings.Contains(stderr, "stderr_msg") {
+				return fmt.Errorf("missing stderr message, got: %q", stderr)
+			}
+			return nil
+		}, retry.Attempts(0), retry.Delay(time.Second), retry.DelayType(retry.FixedDelay))
+		require.NoError(t, err)
+
+		_, _, err = vetu("stop", vmName)
+		require.NoError(t, err)
+	}()
+
+	_, _, err = vetu("run", vmName)
+	require.NoError(t, err)
+}
+
+
+
 func vetu(args ...string) (string, string, error) {
 	cmd := exec.Command(vetuBinaryName, args...)
 

@@ -99,6 +99,10 @@ func (vmDir *VMDirectory) InitramfsPath() string {
 	return filepath.Join(vmDir.baseDir, "initramfs")
 }
 
+func (vmDir *VMDirectory) VsockSocketPath() string {
+	return filepath.Join(vmDir.baseDir, "vsock.sock")
+}
+
 func (vmDir *VMDirectory) Config() (*vmconfig.VMConfig, error) {
 	vmConfigBytes, err := os.ReadFile(vmDir.ConfigPath())
 	if err != nil {
