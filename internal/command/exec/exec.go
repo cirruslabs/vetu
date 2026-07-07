@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 
 	rpcgrpc "buf.build/gen/go/cirruslabs/tart-guest-agent/grpc/go/rpc/rpcgrpc"
@@ -174,6 +175,13 @@ func runExec(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to send command to guest agent: %w", err)
 	}
 
+	var sendMu sync.Mutex
+	sendRequest := func(req *rpc.ExecRequest) error {
+		sendMu.Lock()
+		defer sendMu.Unlock()
+		return execCall.Send(req)
+	}
+
 	// Process command events and optionally send our standard input and/or terminal dimensions
 	g, ctx := errgroup.WithContext(cmd.Context())
 
@@ -186,7 +194,7 @@ func runExec(cmd *cobra.Command, args []string) error {
 			for {
 				n, err := stdinReader.Read(ctx, buf)
 				if n > 0 {
-					if sendErr := execCall.Send(&rpc.ExecRequest{
+					if sendErr := sendRequest(&rpc.ExecRequest{
 						Type: &rpc.ExecRequest_StandardInput{
 							StandardInput: &rpc.IOChunk{
 								Data: buf[:n],
@@ -199,7 +207,7 @@ func runExec(cmd *cobra.Command, args []string) error {
 				if err != nil {
 					if errors.Is(err, io.EOF) {
 						// Signal EOF as we're done reading standard input
-						return execCall.Send(&rpc.ExecRequest{
+						return sendRequest(&rpc.ExecRequest{
 							Type: &rpc.ExecRequest_StandardInput{
 								StandardInput: &rpc.IOChunk{
 									Data: []byte{},
@@ -227,7 +235,7 @@ func runExec(cmd *cobra.Command, args []string) error {
 				case <-sigwinchChan:
 					width, height, err := term.GetSize(stdinFd)
 					if err == nil {
-						sendErr := execCall.Send(&rpc.ExecRequest{
+						sendErr := sendRequest(&rpc.ExecRequest{
 							Type: &rpc.ExecRequest_TerminalResize{
 								TerminalResize: &rpc.TerminalSize{
 									Cols: uint32(width),
