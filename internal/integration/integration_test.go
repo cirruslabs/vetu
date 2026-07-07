@@ -4,6 +4,7 @@ package integration_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/avast/retry-go/v4"
 	"github.com/google/uuid"
@@ -129,9 +130,15 @@ func TestRunAndExec(t *testing.T) {
 		}, retry.Attempts(0), retry.Delay(time.Second), retry.DelayType(retry.FixedDelay))
 		require.NoError(t, err)
 
-		// Verify a failing command returns a non-zero exit code
-		_, _, err = vetu("exec", vmName, "--", "false")
+		// Verify a failing command returns the exact exit code
+		_, _, err = vetu("exec", vmName, "--", "sh", "-c", "exit 42")
 		require.Error(t, err)
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			require.Equal(t, 42, exitErr.ExitCode())
+		} else {
+			t.Fatalf("expected an *exec.ExitError, got %T: %v", err, err)
+		}
 
 		// Terminate the VM by stopping it
 		_, _, err = vetu("stop", vmName)
@@ -177,12 +184,58 @@ func TestRunAndExecStdoutStderr(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// TestRunAndExecInteractiveExit ensures that "vetu exec -i" exits promptly
+// when the remote command finishes, even when stdin has not reached EOF.
+func TestRunAndExecInteractiveExit(t *testing.T) {
+	vmName := fmt.Sprintf("exec-int-%s", uuid.NewString())
 
+	_, _, err := vetu("clone", "ghcr.io/cirruslabs/ubuntu-runner-amd64:latest", vmName)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_, _, _ = vetu("delete", vmName)
+	})
 
-func vetu(args ...string) (string, string, error) {
+	go func() {
+		err = retry.Do(func() error {
+			// Use os.Pipe so exec.Cmd connects the fd directly (no copy goroutine).
+			// The pipe stays open with no writer, simulating a busy terminal.
+			stdinR, stdinW, pipeErr := os.Pipe()
+			if pipeErr != nil {
+				return pipeErr
+			}
+			defer stdinR.Close()
+			defer stdinW.Close()
+
+			_, _, err := vetuWithStdin(stdinR, "exec", "-i", vmName, "--", "false")
+			if err == nil {
+				return fmt.Errorf("expected non-zero exit, got success")
+			}
+			var exitErr *exec.ExitError
+			if !errors.As(err, &exitErr) {
+				return err
+			}
+			if exitErr.ExitCode() != 1 {
+				return fmt.Errorf("expected exit code 1, got %d", exitErr.ExitCode())
+			}
+			return nil
+		}, retry.Attempts(0), retry.Delay(time.Second), retry.DelayType(retry.FixedDelay))
+		require.NoError(t, err)
+
+		_, _, err = vetu("stop", vmName)
+		require.NoError(t, err)
+	}()
+
+	_, _, err = vetu("run", vmName)
+	require.NoError(t, err)
+}
+
+func vetuWithStdin(stdin io.Reader, args ...string) (string, string, error) {
 	cmd := exec.Command(vetuBinaryName, args...)
 
-	// Capture Vetu's output
+	if stdin != nil {
+		cmd.Stdin = stdin
+	}
+
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = io.MultiWriter(os.Stdout, &stdout)
 	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr)
@@ -190,6 +243,10 @@ func vetu(args ...string) (string, string, error) {
 	err := cmd.Run()
 
 	return stdout.String(), stderr.String(), err
+}
+
+func vetu(args ...string) (string, string, error) {
+	return vetuWithStdin(nil, args...)
 }
 
 func sshCommand(ip string, username string, password string, command string) error {

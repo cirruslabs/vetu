@@ -91,8 +91,6 @@ func runExec(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-
-
 	// Execute a command in a running VM
 	controlSocketPath := "vsock.sock"
 	dialer := func(ctx context.Context, addr string) (net.Conn, error) {
@@ -172,39 +170,35 @@ func runExec(cmd *cobra.Command, args []string) error {
 
 	// Stream host's standard input if interactive mode is enabled
 	if interactive {
+		stdinReader := newContextReader(os.Stdin)
+
 		g.Go(func() error {
 			buf := make([]byte, 64*1024)
 			for {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-					n, err := os.Stdin.Read(buf)
-					if n > 0 {
-						sendErr := execCall.Send(&rpc.ExecRequest{
+				n, err := stdinReader.Read(ctx, buf)
+				if n > 0 {
+					if sendErr := execCall.Send(&rpc.ExecRequest{
+						Type: &rpc.ExecRequest_StandardInput{
+							StandardInput: &rpc.IOChunk{
+								Data: buf[:n],
+							},
+						},
+					}); sendErr != nil {
+						return sendErr
+					}
+				}
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						// Signal EOF as we're done reading standard input
+						return execCall.Send(&rpc.ExecRequest{
 							Type: &rpc.ExecRequest_StandardInput{
 								StandardInput: &rpc.IOChunk{
-									Data: buf[:n],
+									Data: []byte{},
 								},
 							},
 						})
-						if sendErr != nil {
-							return sendErr
-						}
 					}
-					if err != nil {
-						if errors.Is(err, io.EOF) {
-							// Signal EOF as we're done reading standard input
-							return execCall.Send(&rpc.ExecRequest{
-								Type: &rpc.ExecRequest_StandardInput{
-									StandardInput: &rpc.IOChunk{
-										Data: []byte{},
-									},
-								},
-							})
-						}
-						return err
-					}
+					return err
 				}
 			}
 		})
@@ -276,4 +270,50 @@ func runExec(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// contextReader wraps an io.Reader with context-aware reads.
+// A background goroutine performs the blocking Read and delivers
+// results to a channel, allowing Read to be interrupted via context.
+type contextReader struct {
+	ch chan contextReaderResult
+}
+
+type contextReaderResult struct {
+	data []byte
+	err  error
+}
+
+func newContextReader(r io.Reader) *contextReader {
+	cr := &contextReader{ch: make(chan contextReaderResult, 1)}
+
+	go func() {
+		buf := make([]byte, 64*1024)
+		for {
+			n, err := r.Read(buf)
+			if n > 0 {
+				data := make([]byte, n)
+				copy(data, buf[:n])
+				cr.ch <- contextReaderResult{data: data}
+			}
+			if err != nil {
+				cr.ch <- contextReaderResult{err: err}
+				return
+			}
+		}
+	}()
+
+	return cr
+}
+
+func (cr *contextReader) Read(ctx context.Context, buf []byte) (int, error) {
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	case result := <-cr.ch:
+		if result.err != nil {
+			return 0, result.err
+		}
+		return copy(buf, result.data), nil
+	}
 }
