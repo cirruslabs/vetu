@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/cirruslabs/vetu/internal/command"
+	"github.com/cirruslabs/vetu/internal/command/exec"
 	"github.com/cirruslabs/vetu/internal/version"
 	"github.com/getsentry/sentry-go"
 	"golang.org/x/sys/unix"
@@ -68,6 +70,11 @@ func main() {
 
 		// Capture the error into stderr and terminate
 		cancel()
+
+		var exitErr *exec.ExecCustomExitCodeError
+		if errors.As(err, &exitErr) {
+			os.Exit(int(exitErr.ExitCode))
+		}
 
 		//nolint:gocritic // "log.Fatal will exit, and `defer sentry.Recover()` will not run" — it's OK,
 		// since we're already capturing the error above

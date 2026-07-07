@@ -129,8 +129,16 @@ func runRun(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
+	// Remove stale vsock socket if any
+	_ = os.Remove(vmDir.VsockSocketPath())
+
 	// Kernel
-	hvArgs := []string{"--console", "pty", "--serial", "tty", "--kernel", vmDir.KernelPath()}
+	hvArgs := []string{
+		"--console", "pty",
+		"--serial", "tty",
+		"--kernel", vmDir.KernelPath(),
+		"--vsock", "cid=3,socket=vsock.sock",
+	}
 
 	// Initramfs
 	_, err = os.Stat(vmDir.InitramfsPath())
@@ -189,6 +197,8 @@ func runRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	hv.Dir = vmDir.Path()
 
 	// Attach network's TAP interface
 	//
